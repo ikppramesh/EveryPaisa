@@ -9,8 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -25,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.work.OneTimeWorkRequestBuilder
@@ -319,7 +322,9 @@ fun HomeScreenNew(
                                     accountLast4 = transaction.accountLast4,
                                     paymentMethod = transaction.description ?: "",
                                     currency = transaction.currency,
-                                    smsId = transaction.smsId
+                                    smsId = transaction.smsId,
+                                    smsBody = transaction.smsBody,
+                                    smsSender = transaction.smsSender
                                 )
                             }
                         }
@@ -881,12 +886,16 @@ fun EnhancedTransactionCard(
     accountLast4: String? = null,
     paymentMethod: String = "",
     currency: String = "INR",
-    smsId: Long? = null
+    smsId: Long? = null,
+    smsBody: String? = null,
+    smsSender: String? = null
 ) {
     val context = LocalContext.current
     val isExpense = transactionType == TransactionType.EXPENSE
     val isTransfer = transactionType == TransactionType.TRANSFER
     val currencySymbol = CurrencySummary.getCurrencySymbol(currency)
+    
+    var showSmsDialog by remember { mutableStateOf(false) }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -998,44 +1007,15 @@ fun EnhancedTransactionCard(
             // Amount + SMS Link
             Column(horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // SMS Link Icon
-                    if (smsId != null) {
+                    // SMS Details Icon
+                    if (smsBody != null) {
                         IconButton(
-                            onClick = {
-                                try {
-                                    // Try to open specific SMS message
-                                    val smsIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                        setDataAndType(android.net.Uri.parse("content://sms/$smsId"), "vnd.android-dir/mms-sms")
-                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    }
-                                    context.startActivity(smsIntent)
-                                } catch (e: Exception) {
-                                    android.util.Log.e("SMSLink", "Failed to open SMS: ${e.message}")
-                                    // Fallback: Open SMS inbox
-                                    try {
-                                        val fallbackIntent = context.packageManager.getLaunchIntentForPackage("com.google.android.apps.messaging")
-                                            ?: android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
-                                                addCategory(android.content.Intent.CATEGORY_APP_MESSAGING)
-                                                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                                            }
-                                        context.startActivity(fallbackIntent)
-                                    } catch (e2: Exception) {
-                                        android.util.Log.e("SMSLink", "Fallback failed: ${e2.message}")
-                                        // Last resort: Open default SMS app
-                                        try {
-                                            val defaultIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                                setType("vnd.android-dir/mms-sms")
-                                            }
-                                            context.startActivity(defaultIntent)
-                                        } catch (_: Exception) { }
-                                    }
-                                }
-                            },
+                            onClick = { showSmsDialog = true },
                             modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
                                 Icons.Default.Message,
-                                contentDescription = "View SMS",
+                                contentDescription = "View SMS Details",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                             )
@@ -1074,6 +1054,119 @@ fun EnhancedTransactionCard(
                 )
             }
         }
+    }
+    
+    // SMS Details Dialog
+    if (showSmsDialog && smsBody != null) {
+        AlertDialog(
+            onDismissRequest = { showSmsDialog = false },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.Message,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("SMS Details", style = MaterialTheme.typography.titleLarge)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Transaction Info
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                merchantName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "${if (isExpense) "-" else "+"}$currencySymbol${String.format("%,.2f", amount.toDouble())}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isExpense) Color(0xFFC62828) else Color(0xFF2E7D32)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                dateTime,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // SMS Sender
+                    if (smsSender != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    "From",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    smsSender,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    
+                    // SMS Body
+                    Column {
+                        Text(
+                            "Message",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                smsBody,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(12.dp),
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSmsDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
     }
 }
 
