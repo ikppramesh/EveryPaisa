@@ -10,7 +10,88 @@ import java.util.regex.Pattern
 // ──────────────────────────────────────────────────────────────────
 private object ParserUtils {
     
+    fun extractCurrency(message: String): String {
+        val lower = message.lowercase()
+        
+        // Check for explicit currency codes first
+        val currencyPatterns = mapOf(
+            "usd" to "USD",
+            "us dollar" to "USD",
+            "dollar" to "USD",
+            "$" to "USD",
+            "eur" to "EUR",
+            "euro" to "EUR",
+            "€" to "EUR",
+            "gbp" to "GBP",
+            "pound" to "GBP",
+            "£" to "GBP",
+            "aed" to "AED",
+            "dirham" to "AED",
+            "د.إ" to "AED",
+            "npr" to "NPR",
+            "nepali rupee" to "NPR",
+            "₨" to "NPR",
+            "etb" to "ETB",
+            "birr" to "ETB",
+            "ብር" to "ETB",
+            "cad" to "CAD",
+            "canadian dollar" to "CAD",
+            "aud" to "AUD",
+            "australian dollar" to "AUD",
+            "sgd" to "SGD",
+            "singapore dollar" to "SGD",
+            "jpy" to "JPY",
+            "yen" to "JPY",
+            "¥" to "JPY",
+            "chf" to "CHF",
+            "swiss franc" to "CHF"
+        )
+        
+        for ((pattern, currency) in currencyPatterns) {
+            if (lower.contains(pattern)) {
+                return currency
+            }
+        }
+        
+        // Default to INR if no other currency found
+        return "INR"
+    }
+    
     fun extractAmount(message: String): BigDecimal? {
+        val currency = extractCurrency(message)
+        
+        // Try currency-specific patterns first
+        val currencyPatterns = when (currency) {
+            "USD" -> listOf(
+                Pattern.compile("USD\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("\\$\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("(?:amt|amount)\\s*(?:of\\s*)?USD\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            )
+            "EUR" -> listOf(
+                Pattern.compile("EUR\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("€\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            )
+            "GBP" -> listOf(
+                Pattern.compile("GBP\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("£\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            )
+            "AED" -> listOf(
+                Pattern.compile("AED\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            )
+            else -> listOf()
+        }
+        
+        // Try currency-specific patterns
+        for (p in currencyPatterns) {
+            val m = p.matcher(message)
+            if (m.find()) {
+                val s = m.group(1)?.replace(",", "") ?: continue
+                val bd = try { BigDecimal(s) } catch (_: Exception) { continue }
+                if (bd > BigDecimal.ZERO && bd < BigDecimal("5000000")) return bd
+            }
+        }
+        
+        // Fallback to INR patterns
         val patterns = listOf(
             Pattern.compile("(?:Rs\\.?|INR|₹)\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
             Pattern.compile("(?:amt|amount)\\s*(?:of\\s*)?(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
@@ -124,6 +205,7 @@ class HDFCBankParser : BankParser {
         val merchant = ParserUtils.extractMerchant(message, "HDFC Transaction")
         val accountLast4 = ParserUtils.extractAccountLast4(message)
         val cardLast4 = ParserUtils.extractCardLast4(message)
+        val currency = ParserUtils.extractCurrency(message)
         
         val balancePattern = Pattern.compile("(?:avl\\s*)?bal[:\\s]*(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
         val balanceMatcher = balancePattern.matcher(message)
@@ -140,7 +222,8 @@ class HDFCBankParser : BankParser {
             accountLast4 = accountLast4,
             cardLast4 = cardLast4,
             balance = balance,
-            rawMessage = message
+            rawMessage = message,
+            currency = currency
         )
     }
 }
@@ -162,6 +245,7 @@ class ICICIBankParser : BankParser {
         val merchant = ParserUtils.extractMerchant(message, "ICICI Transaction")
         val accountLast4 = ParserUtils.extractAccountLast4(message)
         val cardLast4 = ParserUtils.extractCardLast4(message)
+        val currency = ParserUtils.extractCurrency(message)
         
         return ParsedTransaction(
             amount = amount,
@@ -171,7 +255,8 @@ class ICICIBankParser : BankParser {
             bankName = "ICICI Bank",
             accountLast4 = accountLast4,
             cardLast4 = cardLast4,
-            rawMessage = message
+            rawMessage = message,
+            currency = currency
         )
     }
 }
@@ -191,6 +276,7 @@ class SBIParser : BankParser {
         val type = ParserUtils.determineType(message)
         val merchant = ParserUtils.extractMerchant(message, "SBI Transaction")
         val accountLast4 = ParserUtils.extractAccountLast4(message)
+        val currency = ParserUtils.extractCurrency(message)
         
         return ParsedTransaction(
             amount = amount,
@@ -199,7 +285,8 @@ class SBIParser : BankParser {
             dateTime = LocalDateTime.now(),
             bankName = "SBI",
             accountLast4 = accountLast4,
-            rawMessage = message
+            rawMessage = message,
+            currency = currency
         )
     }
 }
@@ -219,6 +306,7 @@ class AxisBankParser : BankParser {
         val merchant = ParserUtils.extractMerchant(message, "Axis Transaction")
         val accountLast4 = ParserUtils.extractAccountLast4(message)
         val cardLast4 = ParserUtils.extractCardLast4(message)
+        val currency = ParserUtils.extractCurrency(message)
         
         return ParsedTransaction(
             amount = amount,
@@ -228,7 +316,8 @@ class AxisBankParser : BankParser {
             bankName = "Axis Bank",
             accountLast4 = accountLast4,
             cardLast4 = cardLast4,
-            rawMessage = message
+            rawMessage = message,
+            currency = currency
         )
     }
 }
@@ -248,6 +337,7 @@ class KotakBankParser : BankParser {
         val merchant = ParserUtils.extractMerchant(message, "Kotak Transaction")
         val accountLast4 = ParserUtils.extractAccountLast4(message)
         val cardLast4 = ParserUtils.extractCardLast4(message)
+        val currency = ParserUtils.extractCurrency(message)
         
         return ParsedTransaction(
             amount = amount,
@@ -257,7 +347,8 @@ class KotakBankParser : BankParser {
             bankName = "Kotak Bank",
             accountLast4 = accountLast4,
             cardLast4 = cardLast4,
-            rawMessage = message
+            rawMessage = message,
+            currency = currency
         )
     }
 }
@@ -275,7 +366,8 @@ class PNBParser : BankParser {
             amount = amount, merchantName = ParserUtils.extractMerchant(message, "PNB Transaction"),
             transactionType = ParserUtils.determineType(message), dateTime = LocalDateTime.now(),
             bankName = "PNB", accountLast4 = ParserUtils.extractAccountLast4(message),
-            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message
+            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -290,7 +382,8 @@ class BOBParser : BankParser {
             amount = amount, merchantName = ParserUtils.extractMerchant(message, "BOB Transaction"),
             transactionType = ParserUtils.determineType(message), dateTime = LocalDateTime.now(),
             bankName = "Bank of Baroda", accountLast4 = ParserUtils.extractAccountLast4(message),
-            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message
+            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -305,7 +398,8 @@ class CanaraParser : BankParser {
             amount = amount, merchantName = ParserUtils.extractMerchant(message, "Canara Transaction"),
             transactionType = ParserUtils.determineType(message), dateTime = LocalDateTime.now(),
             bankName = "Canara Bank", accountLast4 = ParserUtils.extractAccountLast4(message),
-            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message
+            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -320,7 +414,8 @@ class UnionBankParser : BankParser {
             amount = amount, merchantName = ParserUtils.extractMerchant(message, "Union Bank Transaction"),
             transactionType = ParserUtils.determineType(message), dateTime = LocalDateTime.now(),
             bankName = "Union Bank", accountLast4 = ParserUtils.extractAccountLast4(message),
-            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message
+            cardLast4 = ParserUtils.extractCardLast4(message), rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -349,7 +444,8 @@ class IDFCFirstBankParser : BankParser {
             amount = amount, merchantName = merchant,
             transactionType = type, dateTime = LocalDateTime.now(),
             bankName = "IDFC First", accountLast4 = accountLast4,
-            cardLast4 = cardLast4, rawMessage = message
+            cardLast4 = cardLast4, rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -373,7 +469,8 @@ class FederalBankParser : BankParser {
             amount = amount, merchantName = merchant,
             transactionType = type, dateTime = LocalDateTime.now(),
             bankName = "Federal Bank", accountLast4 = accountLast4,
-            cardLast4 = cardLast4, rawMessage = message
+            cardLast4 = cardLast4, rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -405,7 +502,7 @@ class GooglePayParser : BankParser {
             amount = amount, merchantName = merchant,
             transactionType = type, dateTime = LocalDateTime.now(),
             bankName = "Google Pay (UPI)", accountLast4 = accountLast4,
-            rawMessage = message
+            rawMessage = message, currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -433,7 +530,7 @@ class PhonePeParser : BankParser {
             amount = amount, merchantName = merchant,
             transactionType = type, dateTime = LocalDateTime.now(),
             bankName = "PhonePe (UPI)", accountLast4 = accountLast4,
-            rawMessage = message
+            rawMessage = message, currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -452,7 +549,8 @@ class PaytmParser : BankParser {
         return ParsedTransaction(
             amount = amount, merchantName = merchant,
             transactionType = type, dateTime = LocalDateTime.now(),
-            bankName = "Paytm (UPI)", rawMessage = message
+            bankName = "Paytm (UPI)", rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }
@@ -472,7 +570,8 @@ class AmazonPayParser : BankParser {
         return ParsedTransaction(
             amount = amount, merchantName = merchant,
             transactionType = type, dateTime = LocalDateTime.now(),
-            bankName = "Amazon Pay", rawMessage = message
+            bankName = "Amazon Pay", rawMessage = message,
+            currency = ParserUtils.extractCurrency(message)
         )
     }
 }

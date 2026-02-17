@@ -13,7 +13,8 @@ data class ParsedTransaction(
     val cardLast4: String? = null,
     val balance: BigDecimal? = null,
     val mandateInfo: MandateInfo? = null,
-    val rawMessage: String
+    val rawMessage: String,
+    val currency: String = "INR"  // Default to INR for backward compatibility
 )
 
 enum class TransactionType {

@@ -122,7 +122,8 @@ class SmsTransactionProcessor @Inject constructor(
                 smsSender = sender,
                 bankName = parsedTxn.bankName,
                 accountLast4 = parsedTxn.accountLast4 ?: parsedTxn.cardLast4,
-                transactionHash = hash
+                transactionHash = hash,
+                currency = parsedTxn.currency
             )
             
             transactionRepository.insertTransaction(entity)
@@ -399,7 +400,8 @@ class SmsTransactionProcessor @Inject constructor(
                     smsSender = sender,
                     bankName = parsedTxn.bankName,
                     accountLast4 = parsedTxn.accountLast4 ?: parsedTxn.cardLast4,
-                    transactionHash = generateHash(message + "_refund")
+                    transactionHash = generateHash(message + "_refund"),
+                    currency = parsedTxn.currency
                 )
                 
                 transactionRepository.insertTransaction(refundEntity)
@@ -425,7 +427,8 @@ class SmsTransactionProcessor @Inject constructor(
                     smsSender = sender,
                     bankName = parsedTxn.bankName,
                     accountLast4 = parsedTxn.accountLast4 ?: parsedTxn.cardLast4,
-                    transactionHash = generateHash(message + "_refund")
+                    transactionHash = generateHash(message + "_refund"),
+                    currency = parsedTxn.currency
                 )
                 
                 transactionRepository.insertTransaction(refundEntity)
