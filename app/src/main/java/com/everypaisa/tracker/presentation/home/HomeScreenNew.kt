@@ -1022,7 +1022,7 @@ fun EnhancedTransactionCard(
                             modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.Message,
+                                Icons.Default.Message,
                                 contentDescription = "View SMS",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)

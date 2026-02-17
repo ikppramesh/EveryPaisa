@@ -14,7 +14,7 @@ import com.everypaisa.tracker.data.entity.*
         SubscriptionEntity::class,
         AccountBalanceEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
