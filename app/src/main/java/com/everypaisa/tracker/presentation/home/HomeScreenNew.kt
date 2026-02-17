@@ -318,7 +318,8 @@ fun HomeScreenNew(
                                     bankName = transaction.bankName ?: "Unknown",
                                     accountLast4 = transaction.accountLast4,
                                     paymentMethod = transaction.description ?: "",
-                                    currency = transaction.currency
+                                    currency = transaction.currency,
+                                    smsId = transaction.smsId
                                 )
                             }
                         }
@@ -879,8 +880,10 @@ fun EnhancedTransactionCard(
     bankName: String,
     accountLast4: String? = null,
     paymentMethod: String = "",
-    currency: String = "INR"
+    currency: String = "INR",
+    smsId: Long? = null
 ) {
+    val context = LocalContext.current
     val isExpense = transactionType == TransactionType.EXPENSE
     val isTransfer = transactionType == TransactionType.TRANSFER
     val currencySymbol = CurrencySummary.getCurrencySymbol(currency)
@@ -992,18 +995,53 @@ fun EnhancedTransactionCard(
                 }
             }
             
-            // Amount
+            // Amount + SMS Link
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    "${if (isExpense) "-" else if (isTransfer) "" else "+"}$currencySymbol${String.format("%,.2f", amount.toDouble())}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = when {
-                        isExpense -> Color(0xFFC62828)
-                        isTransfer -> MaterialTheme.colorScheme.onSurface
-                        else -> Color(0xFF2E7D32)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // SMS Link Icon
+                    if (smsId != null) {
+                        IconButton(
+                            onClick = {
+                                try {
+                                    val smsIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                        data = android.net.Uri.parse("content://sms/$smsId")
+                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                    context.startActivity(smsIntent)
+                                } catch (e: Exception) {
+                                    // Fallback: Open SMS app
+                                    try {
+                                        val fallbackIntent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                                            addCategory(android.content.Intent.CATEGORY_DEFAULT)
+                                            type = "vnd.android-dir/mms-sms"
+                                        }
+                                        context.startActivity(fallbackIntent)
+                                    } catch (_: Exception) { }
+                                }
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Message,
+                                contentDescription = "View SMS",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
-                )
+                    
+                    Text(
+                        "${if (isExpense) "-" else if (isTransfer) "" else "+"}$currencySymbol${String.format("%,.2f", amount.toDouble())}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            isExpense -> Color(0xFFC62828)
+                            isTransfer -> MaterialTheme.colorScheme.onSurface
+                            else -> Color(0xFF2E7D32)
+                        }
+                    )
+                }
                 // Show currency code if not INR
                 if (currency.uppercase() != "INR") {
                     Text(

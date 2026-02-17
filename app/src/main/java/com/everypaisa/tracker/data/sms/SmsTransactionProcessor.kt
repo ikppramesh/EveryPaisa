@@ -36,6 +36,7 @@ class SmsTransactionProcessor @Inject constructor(
         val cursor = context.contentResolver.query(
             Telephony.Sms.CONTENT_URI,
             arrayOf(
+                Telephony.Sms._ID,
                 Telephony.Sms.ADDRESS,
                 Telephony.Sms.BODY,
                 Telephony.Sms.DATE
@@ -46,6 +47,7 @@ class SmsTransactionProcessor @Inject constructor(
         )
         
         cursor?.use {
+            val idIndex = it.getColumnIndex(Telephony.Sms._ID)
             val addressIndex = it.getColumnIndex(Telephony.Sms.ADDRESS)
             val bodyIndex = it.getColumnIndex(Telephony.Sms.BODY)
             val dateIndex = it.getColumnIndex(Telephony.Sms.DATE)
@@ -54,6 +56,7 @@ class SmsTransactionProcessor @Inject constructor(
             
             while (it.moveToNext()) {
                 totalSmsCount++
+                val smsId = it.getLong(idIndex)
                 val sender = it.getString(addressIndex) ?: continue
                 val body = it.getString(bodyIndex) ?: continue
                 val dateMillis = it.getLong(dateIndex)
@@ -62,7 +65,7 @@ class SmsTransactionProcessor @Inject constructor(
                     Log.d(TAG, "Sample SMS $totalSmsCount - Sender: $sender, Body: ${body.take(50)}...")
                 }
                 
-                val parsed = processMessage(sender, body, dateMillis)
+                val parsed = processMessage(sender, body, dateMillis, smsId)
                 if (parsed) parsedCount++
             }
         }
@@ -71,7 +74,7 @@ class SmsTransactionProcessor @Inject constructor(
         return parsedCount
     }
     
-    suspend fun processMessage(sender: String, message: String, dateMillis: Long? = null): Boolean {
+    suspend fun processMessage(sender: String, message: String, dateMillis: Long? = null, smsId: Long? = null): Boolean {
         // Filter out non-transactional SMS
         if (isNonTransactionalSms(message)) {
             Log.d(TAG, "⏭️ Skipping non-transactional SMS from $sender: ${message.take(50)}...")
@@ -81,7 +84,7 @@ class SmsTransactionProcessor @Inject constructor(
         // Check for failed/reversed transactions
         if (isFailedTransaction(message)) {
             Log.d(TAG, "🔄 Detected failed/reversed transaction from $sender")
-            handleFailedTransaction(sender, message, dateMillis)
+            handleFailedTransaction(sender, message, dateMillis, smsId)
             return false
         }
         
@@ -120,6 +123,7 @@ class SmsTransactionProcessor @Inject constructor(
                 description = paymentMethod,
                 smsBody = parsedTxn.rawMessage,
                 smsSender = sender,
+                smsId = smsId,
                 bankName = parsedTxn.bankName,
                 accountLast4 = parsedTxn.accountLast4 ?: parsedTxn.cardLast4,
                 transactionHash = hash,
@@ -348,7 +352,7 @@ class SmsTransactionProcessor @Inject constructor(
      * Handle failed transaction by finding and removing the original expense,
      * then adding a refund transaction
      */
-    private suspend fun handleFailedTransaction(sender: String, message: String, dateMillis: Long?) {
+    private suspend fun handleFailedTransaction(sender: String, message: String, dateMillis: Long?, smsId: Long?) {
         try {
             // Try to parse the failed transaction to get amount and merchant details
             val parsedTxn = parserFactory.parse(sender, message)
@@ -398,6 +402,7 @@ class SmsTransactionProcessor @Inject constructor(
                     description = "Failed transaction refund",
                     smsBody = message,
                     smsSender = sender,
+                    smsId = smsId,
                     bankName = parsedTxn.bankName,
                     accountLast4 = parsedTxn.accountLast4 ?: parsedTxn.cardLast4,
                     transactionHash = generateHash(message + "_refund"),
@@ -425,6 +430,7 @@ class SmsTransactionProcessor @Inject constructor(
                     description = "Refund/Reversal",
                     smsBody = message,
                     smsSender = sender,
+                    smsId = smsId,
                     bankName = parsedTxn.bankName,
                     accountLast4 = parsedTxn.accountLast4 ?: parsedTxn.cardLast4,
                     transactionHash = generateHash(message + "_refund"),

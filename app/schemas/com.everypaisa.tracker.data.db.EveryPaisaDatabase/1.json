@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fefc508de6fe5b50b4b80c85813e930f",
+    "identityHash": "a91e1182946d8e312f7805c1cf617a7b",
     "entities": [
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `amount` TEXT NOT NULL, `merchant_name` TEXT NOT NULL, `category` TEXT NOT NULL, `transaction_type` TEXT NOT NULL, `date_time` INTEGER NOT NULL, `description` TEXT, `sms_body` TEXT, `sms_sender` TEXT, `bank_name` TEXT, `account_last4` TEXT, `transaction_hash` TEXT NOT NULL, `currency` TEXT NOT NULL, `is_deleted` INTEGER NOT NULL, `from_account` TEXT, `to_account` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `amount` TEXT NOT NULL, `merchant_name` TEXT NOT NULL, `category` TEXT NOT NULL, `transaction_type` TEXT NOT NULL, `date_time` INTEGER NOT NULL, `description` TEXT, `sms_body` TEXT, `sms_sender` TEXT, `sms_id` INTEGER, `bank_name` TEXT, `account_last4` TEXT, `transaction_hash` TEXT NOT NULL, `currency` TEXT NOT NULL, `is_deleted` INTEGER NOT NULL, `from_account` TEXT, `to_account` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -60,6 +60,12 @@
             "fieldPath": "smsSender",
             "columnName": "sms_sender",
             "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "smsId",
+            "columnName": "sms_id",
+            "affinity": "INTEGER",
             "notNull": false
           },
           {
@@ -346,7 +352,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fefc508de6fe5b50b4b80c85813e930f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a91e1182946d8e312f7805c1cf617a7b')"
     ]
   }
 }

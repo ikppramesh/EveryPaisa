@@ -42,6 +42,9 @@ data class TransactionEntity(
     @ColumnInfo(name = "sms_sender")
     val smsSender: String? = null,
     
+    @ColumnInfo(name = "sms_id")
+    val smsId: Long? = null,
+    
     @ColumnInfo(name = "bank_name")
     val bankName: String? = null,
     
