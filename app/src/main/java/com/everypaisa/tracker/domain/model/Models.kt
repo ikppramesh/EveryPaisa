@@ -14,6 +14,38 @@ data class MonthSummary(
     val topCategoryAmount: BigDecimal? = null
 )
 
+data class CurrencySummary(
+    val currency: String,
+    val currencySymbol: String,
+    val totalIncome: BigDecimal,
+    val totalExpenses: BigDecimal,
+    val transactionCount: Int
+) {
+    val netAmount: BigDecimal
+        get() = totalIncome.subtract(totalExpenses)
+    
+    companion object {
+        fun getCurrencySymbol(currency: String): String = when (currency.uppercase()) {
+            "INR" -> "₹"
+            "USD" -> "$"
+            "EUR" -> "€"
+            "GBP" -> "£"
+            "AED" -> "د.إ"
+            "NPR" -> "₨"
+            "ETB" -> "ብር"
+            else -> currency
+        }
+    }
+}
+
+data class MultiCurrencySummary(
+    val inrSummary: CurrencySummary?,
+    val internationalSummaries: List<CurrencySummary>
+) {
+    val hasInternational: Boolean
+        get() = internationalSummaries.isNotEmpty()
+}
+
 data class CategorySpending(
     val category: String,
     val totalAmount: BigDecimal,

@@ -31,7 +31,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.everypaisa.tracker.data.entity.TransactionType
+import com.everypaisa.tracker.domain.model.CurrencySummary
 import com.everypaisa.tracker.domain.model.DashboardPeriod
+import com.everypaisa.tracker.domain.model.MultiCurrencySummary
 import com.everypaisa.tracker.domain.model.Period
 import com.everypaisa.tracker.worker.OptimizedSmsReaderWorker
 import kotlinx.coroutines.delay
@@ -233,12 +235,10 @@ fun HomeScreenNew(
                             )
                         }
 
-                        // Hero Summary Card
+                        // Hero Summary Card - Multi-Currency
                         item {
-                            HeroSummaryCard(
-                                income = state.monthSummary.totalIncome,
-                                expense = state.monthSummary.totalExpenses,
-                                count = state.monthSummary.transactionCount,
+                            MultiCurrencySummaryCard(
+                                multiCurrencySummary = state.multiCurrencySummary,
                                 period = state.currentPeriod.format(),
                                 periodType = state.currentPeriod.type
                             )
@@ -317,7 +317,8 @@ fun HomeScreenNew(
                                     transactionType = transaction.transactionType,
                                     bankName = transaction.bankName ?: "Unknown",
                                     accountLast4 = transaction.accountLast4,
-                                    paymentMethod = transaction.description ?: ""
+                                    paymentMethod = transaction.description ?: "",
+                                    currency = transaction.currency
                                 )
                             }
                         }
@@ -450,6 +451,241 @@ fun PeriodNavigationBar(
                 contentDescription = "Next",
                 tint = if (!period.isFuture()) MaterialTheme.colorScheme.primary
                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+            )
+        }
+    }
+}
+
+@Composable
+fun MultiCurrencySummaryCard(
+    multiCurrencySummary: MultiCurrencySummary,
+    period: String,
+    periodType: DashboardPeriod = DashboardPeriod.MONTHLY
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Text(
+                period,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // If we have international currencies, show split view
+            if (multiCurrencySummary.hasInternational) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Left: Indian (INR) Summary
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            "🇮🇳 Indian",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        multiCurrencySummary.inrSummary?.let { inr ->
+                            CurrencySummaryView(
+                                summary = inr,
+                                isCompact = true
+                            )
+                        } ?: run {
+                            Text(
+                                "No transactions",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                    
+                    // Divider
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(120.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                    )
+                    
+                    // Right: International Summaries
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            "🌍 International",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        multiCurrencySummary.internationalSummaries.forEach { intlSummary ->
+                            CurrencySummaryView(
+                                summary = intlSummary,
+                                isCompact = true
+                            )
+                            if (intlSummary != multiCurrencySummary.internationalSummaries.last()) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Only INR - show single currency view
+                multiCurrencySummary.inrSummary?.let { inr ->
+                    CurrencySummaryView(
+                        summary = inr,
+                        isCompact = false,
+                        periodType = periodType
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CurrencySummaryView(
+    summary: CurrencySummary,
+    isCompact: Boolean,
+    periodType: DashboardPeriod = DashboardPeriod.MONTHLY
+) {
+    Column {
+        // Net Amount
+        Text(
+            "${summary.currencySymbol} ${String.format("%,.2f", summary.netAmount.toDouble())}",
+            style = if (isCompact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        
+        if (!isCompact) {
+            val netLabel = when (periodType) {
+                DashboardPeriod.DAILY -> "Net balance today"
+                DashboardPeriod.WEEKLY -> "Net balance this week"
+                DashboardPeriod.MONTHLY -> "Net balance this month"
+                DashboardPeriod.YEARLY -> "Net balance this year"
+            }
+            Text(
+                netLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        } else {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        
+        // Income/Expense Row
+        if (!isCompact) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.TrendingUp,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Income",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "${summary.currencySymbol}${String.format("%,.2f", summary.totalIncome.toDouble())}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                Column(horizontalAlignment = Alignment.End) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.TrendingDown,
+                            contentDescription = null,
+                            tint = Color(0xFFC62828),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Expenses",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "${summary.currencySymbol}${String.format("%,.2f", summary.totalExpenses.toDouble())}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        } else {
+            // Compact view
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = null,
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "${summary.currencySymbol}${String.format("%,.0f", summary.totalIncome.toDouble())}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.TrendingDown,
+                        contentDescription = null,
+                        tint = Color(0xFFC62828),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "${summary.currencySymbol}${String.format("%,.0f", summary.totalExpenses.toDouble())}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+        
+        // Transaction count for compact view
+        if (isCompact) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "${summary.transactionCount} transactions",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
             )
         }
     }
@@ -642,10 +878,12 @@ fun EnhancedTransactionCard(
     transactionType: TransactionType,
     bankName: String,
     accountLast4: String? = null,
-    paymentMethod: String = ""
+    paymentMethod: String = "",
+    currency: String = "INR"
 ) {
     val isExpense = transactionType == TransactionType.EXPENSE
     val isTransfer = transactionType == TransactionType.TRANSFER
+    val currencySymbol = CurrencySummary.getCurrencySymbol(currency)
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -757,7 +995,7 @@ fun EnhancedTransactionCard(
             // Amount
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    "${if (isExpense) "-" else if (isTransfer) "" else "+"}₹${String.format("%,.2f", amount.toDouble())}",
+                    "${if (isExpense) "-" else if (isTransfer) "" else "+"}$currencySymbol${String.format("%,.2f", amount.toDouble())}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = when {
@@ -766,6 +1004,15 @@ fun EnhancedTransactionCard(
                         else -> Color(0xFF2E7D32)
                     }
                 )
+                // Show currency code if not INR
+                if (currency.uppercase() != "INR") {
+                    Text(
+                        currency.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
                 Text(
                     when {
                         isExpense -> "Spent"

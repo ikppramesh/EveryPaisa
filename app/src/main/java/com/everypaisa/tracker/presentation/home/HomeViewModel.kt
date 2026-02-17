@@ -4,8 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.everypaisa.tracker.data.entity.TransactionEntity
+import com.everypaisa.tracker.data.entity.TransactionType
+import com.everypaisa.tracker.domain.model.CurrencySummary
 import com.everypaisa.tracker.domain.model.DashboardPeriod
 import com.everypaisa.tracker.domain.model.MonthSummary
+import com.everypaisa.tracker.domain.model.MultiCurrencySummary
 import com.everypaisa.tracker.domain.model.Period
 import com.everypaisa.tracker.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,10 +38,15 @@ class HomeViewModel @Inject constructor(
             transactionRepository.getMonthSummary(period)
         ) { transactions, summary ->
             Log.d(TAG, "📊 UI State updated: ${transactions.size} txns for ${period.format()}")
+            
+            // Calculate multi-currency summary
+            val multiCurrencySummary = calculateMultiCurrencySummary(transactions)
+            
             HomeUiState.Success(
                 transactions = transactions,
                 monthSummary = summary,
-                currentPeriod = period
+                currentPeriod = period,
+                multiCurrencySummary = multiCurrencySummary
             ) as HomeUiState
         }
     }.catch { e ->
@@ -49,6 +57,37 @@ class HomeViewModel @Inject constructor(
         SharingStarted.Eagerly,
         HomeUiState.Loading
     )
+    
+    private fun calculateMultiCurrencySummary(transactions: List<TransactionEntity>): MultiCurrencySummary {
+        // Group transactions by currency
+        val byCurrency = transactions.groupBy { it.currency }
+        
+        val currencySummaries = byCurrency.map { (currency, txns) ->
+            val income = txns
+                .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.CREDIT }
+                .sumOf { it.amount }
+            val expenses = txns
+                .filter { it.transactionType == TransactionType.EXPENSE }
+                .sumOf { it.amount }
+            
+            CurrencySummary(
+                currency = currency,
+                currencySymbol = CurrencySummary.getCurrencySymbol(currency),
+                totalIncome = income,
+                totalExpenses = expenses,
+                transactionCount = txns.size
+            )
+        }
+        
+        // Separate INR from international
+        val inrSummary = currencySummaries.firstOrNull { it.currency.uppercase() == "INR" }
+        val internationalSummaries = currencySummaries.filter { it.currency.uppercase() != "INR" }
+        
+        return MultiCurrencySummary(
+            inrSummary = inrSummary,
+            internationalSummaries = internationalSummaries
+        )
+    }
     
     fun selectPeriodType(type: DashboardPeriod) {
         _selectedPeriod.value = Period.forType(type)
@@ -82,7 +121,8 @@ sealed interface HomeUiState {
     data class Success(
         val transactions: List<TransactionEntity>,
         val monthSummary: MonthSummary,
-        val currentPeriod: Period
+        val currentPeriod: Period,
+        val multiCurrencySummary: MultiCurrencySummary
     ) : HomeUiState
     data class Error(val message: String) : HomeUiState
 }
