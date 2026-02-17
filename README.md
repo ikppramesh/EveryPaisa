@@ -231,7 +231,12 @@ Comprehensive documentation is available in the root directory:
 ## 🎨 Screenshots
 
 <p align="center">
-  <i>Coming soon — Dashboard, Analytics, Transaction List</i>
+  <img src="screenshot1.jpg" alt="Home Dashboard" width="300"/>
+  <img src="screenshot2.jpg" alt="Analytics Screen" width="300"/>
+</p>
+
+<p align="center">
+  <em>Home Dashboard with transaction list | Analytics with bar charts</em>
 </p>
 
 ---
@@ -305,9 +310,9 @@ If you encounter issues or have feature requests, please open an issue on GitHub
 ## 📄 License
 
 **Proprietary License**  
-Copyright © 2026 EveryPaisa. All rights reserved.
+Copyright © 2026 Ramesh Inampudi (iramesh.com). All rights reserved.
 
-This software is proprietary and confidential. Unauthorized copying, distribution, modification, or use of this software, via any medium, is strictly prohibited without express written permission.
+This software is proprietary and confidential. Unauthorized copying, distribution, modification, or use of this software, via any medium, is strictly prohibited without express written permission from Ramesh Inampudi.
 
 ---
 
@@ -325,7 +330,7 @@ This software is proprietary and confidential. Unauthorized copying, distributio
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/ikppramesh/EveryPaisa/issues)
-- **Email**: support@everypaisa.com *(coming soon)*
+- **Email**: hello@iramesh.com
 
 ---
 
@@ -336,7 +341,7 @@ If you find EveryPaisa useful, please consider starring the repository!
 ---
 
 <p align="center">
-  Made with ❤️ in India<br>
+  Made with ❤️ in India by <a href="https://iramesh.com">Ramesh Inampudi</a><br>
   <sub>For the Samsung Galaxy Fold 7 and beyond</sub>
 </p>
 
