@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Everypaisa</string>
+    <string name="app_tagline">Every paisa accounted for</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_analytics">Analytics</string>
+    <string name="nav_chat">Chat</string>
+    
+    <!-- Permissions -->
+    <string name="permission_title">Your finances, your privacy</string>
+    <string name="permission_subtitle">Everypaisa reads your bank SMS to automatically track your expenses. Everything stays on your phone. We never upload your data anywhere.</string>
+    <string name="permission_feature_1">✓ Reads only bank transaction SMS</string>
+    <string name="permission_feature_2">✓ 100% on-device processing</string>
+    <string name="permission_feature_3">✓ No internet needed</string>
+    <string name="permission_feature_4">✓ No data shared with anyone</string>
+    <string name="permission_feature_5">✓ Delete your data anytime</string>
+    <string name="permission_allow">Allow SMS Access</string>
+    <string name="permission_skip">Skip for now</string>
+    
+    <!-- Home Screen -->
+    <string name="home_scan_button">Scan SMS</string>
+    <string name="home_no_transactions">No transactions yet</string>
+    <string name="home_no_transactions_desc">Tap the scan button to read your bank SMS and track your expenses</string>
+    <string name="home_scan_now">Scan Now</string>
+    
+    <!-- Common -->
+    <string name="settings">Settings</string>
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="done">Done</string>
+    
+    <!-- Currency -->
+    <string name="currency_inr">INR (₹)</string>
+    
+    <!-- Categories -->
+    <string name="category_food_dining">Food &amp; Dining</string>
+    <string name="category_groceries">Groceries</string>
+    <string name="category_shopping">Shopping</string>
+    <string name="category_transportation">Transportation</string>
+    <string name="category_bills_utilities">Bills &amp; Utilities</string>
+    <string name="category_entertainment">Entertainment</string>
+    <string name="category_healthcare">Healthcare</string>
+    <string name="category_education">Education</string>
+    <string name="category_personal_care">Personal Care</string>
+    <string name="category_travel">Travel</string>
+    <string name="category_investments">Investments</string>
+    <string name="category_subscriptions">Subscriptions</string>
+    <string name="category_transfers">Transfers</string>
+    <string name="category_others">Others</string>
+    <string name="category_salary">Salary</string>
+    <string name="category_refunds">Refunds</string>
+    <string name="category_cashback">Cashback</string>
+    <string name="category_interest">Interest</string>
+    <string name="category_dividends">Dividends</string>
+    <string name="category_income">Income</string>
+</resources>
