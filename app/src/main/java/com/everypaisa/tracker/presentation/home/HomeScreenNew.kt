@@ -1003,20 +1003,32 @@ fun EnhancedTransactionCard(
                         IconButton(
                             onClick = {
                                 try {
+                                    // Try to open specific SMS message
                                     val smsIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                        data = android.net.Uri.parse("content://sms/$smsId")
-                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                        setDataAndType(android.net.Uri.parse("content://sms/$smsId"), "vnd.android-dir/mms-sms")
+                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
                                     }
                                     context.startActivity(smsIntent)
                                 } catch (e: Exception) {
-                                    // Fallback: Open SMS app
+                                    android.util.Log.e("SMSLink", "Failed to open SMS: ${e.message}")
+                                    // Fallback: Open SMS inbox
                                     try {
-                                        val fallbackIntent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
-                                            addCategory(android.content.Intent.CATEGORY_DEFAULT)
-                                            type = "vnd.android-dir/mms-sms"
-                                        }
+                                        val fallbackIntent = context.packageManager.getLaunchIntentForPackage("com.google.android.apps.messaging")
+                                            ?: android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                                                addCategory(android.content.Intent.CATEGORY_APP_MESSAGING)
+                                                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                            }
                                         context.startActivity(fallbackIntent)
-                                    } catch (_: Exception) { }
+                                    } catch (e2: Exception) {
+                                        android.util.Log.e("SMSLink", "Fallback failed: ${e2.message}")
+                                        // Last resort: Open default SMS app
+                                        try {
+                                            val defaultIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                                setType("vnd.android-dir/mms-sms")
+                                            }
+                                            context.startActivity(defaultIntent)
+                                        } catch (_: Exception) { }
+                                    }
                                 }
                             },
                             modifier = Modifier.size(28.dp)

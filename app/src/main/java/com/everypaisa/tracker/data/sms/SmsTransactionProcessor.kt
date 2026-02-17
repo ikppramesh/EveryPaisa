@@ -131,7 +131,7 @@ class SmsTransactionProcessor @Inject constructor(
             )
             
             transactionRepository.insertTransaction(entity)
-            Log.d(TAG, "💾 Saved transaction to database, date: $transactionDateTime")
+            Log.d(TAG, "💾 Saved transaction to database, date: $transactionDateTime, smsId: $smsId")
             return true
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error saving transaction: ${e.message}", e)
