@@ -1206,8 +1206,8 @@ fun getCategoryIcon(category: String) = when (category.lowercase()) {
     "pharmacy", "medicine" -> Icons.Default.LocalPharmacy
     "parking" -> Icons.Default.LocalParking
     "laundry", "dry cleaning" -> Icons.Default.LocalLaundryService
-    "others", "other" -> Icons.Default.Category
-    else -> Icons.Default.Category
+    "others", "other" -> Icons.Default.EmojiEmotions
+    else -> Icons.Default.EmojiEmotions
 }
 
 fun getCategoryColor(category: String) = when (category.lowercase()) {
