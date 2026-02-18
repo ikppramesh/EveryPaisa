@@ -98,6 +98,7 @@ fun HomeScreenNew(
     }
     
     Scaffold(
+        contentWindowInsets = if (showTopBar) ScaffoldDefaults.contentWindowInsets else WindowInsets(0),
         topBar = {
             if (showTopBar) LargeTopAppBar(
                 title = { 
@@ -140,7 +141,7 @@ fun HomeScreenNew(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(
+            if (showTopBar) FloatingActionButton(
                 onClick = { startScan() },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
