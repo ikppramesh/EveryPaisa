@@ -36,14 +36,19 @@ class HomeViewModel @Inject constructor(
         combine(
             transactionRepository.getTransactionsForPeriod(period),
             transactionRepository.getMonthSummary(period)
-        ) { transactions, summary ->
-            Log.d(TAG, "📊 UI State updated: ${transactions.size} txns for ${period.format()}")
+        ) { allTransactions, summary ->
+            // Filter only INR transactions for Indian home screen
+            val inrTransactions = allTransactions.filter { txn ->
+                txn.currency.uppercase() == "INR"
+            }
             
-            // Calculate multi-currency summary
-            val multiCurrencySummary = calculateMultiCurrencySummary(transactions)
+            Log.d(TAG, "🇮🇳 Indian Transactions: ${inrTransactions.size}/${allTransactions.size}")
+            
+            // Calculate multi-currency summary (only INR for Indian screen)
+            val multiCurrencySummary = calculateMultiCurrencySummary(inrTransactions)
             
             HomeUiState.Success(
-                transactions = transactions,
+                transactions = inrTransactions,
                 monthSummary = summary,
                 currentPeriod = period,
                 multiCurrencySummary = multiCurrencySummary

@@ -425,6 +425,29 @@ everypaisa-android/
 
 ## 📋 Changelog
 
+### Version 1.2.0 (February 18, 2026)
+
+#### 🌍 **Regional Banking Tabs**
+- Added **bottom navigation** with separate tabs for 🇮🇳 India and 🇦🇪 UAE banking
+- **India tab** now shows only INR transactions from Indian banks
+- **UAE tab** shows transactions in AED, SAR, QAR, OMR, KWD, and BHD currencies
+- Transactions are **never mixed** between the two regional tabs
+
+#### 🏦 **UAE Banking Support**
+- Dedicated screen for UAE/GCC banking (Emirates NBD, ADCB, FAB, ENBD)
+- Supports all major GCC currencies: AED, SAR, QAR, OMR, KWD, BHD
+- Full period navigation (Daily/Weekly/Monthly/Yearly) on UAE tab
+- Multi-currency summary with AED as primary UAE currency
+- Empty state guidance when no UAE transactions are available
+
+#### 🏗️ **Technical Updates**
+- Created `UAEHomeScreen` and `UAEHomeViewModel` with GCC currency filtering
+- Created `MainScreenWithTabs` with Material3 `NavigationBar` component
+- Updated `HomeViewModel` to filter INR-only transactions for India tab
+- Updated navigation graph to use tabs as main entry point
+
+---
+
 ### Version 1.1.0 (February 18, 2026)
 
 #### 🎨 **Comprehensive Category System**

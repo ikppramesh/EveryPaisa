@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.everypaisa.tracker.presentation.analytics.AnalyticsScreen
 import com.everypaisa.tracker.presentation.home.HomeScreenNew
+import com.everypaisa.tracker.presentation.uae.UAEHomeScreen
 import com.everypaisa.tracker.presentation.permission.PermissionScreen
 import com.everypaisa.tracker.presentation.transactions.TransactionsScreen
 import com.everypaisa.tracker.presentation.settings.SettingsScreen
@@ -23,20 +24,20 @@ fun EveryPaisaNavHost() {
         composable("permission") {
             PermissionScreen(
                 onPermissionGranted = {
-                    navController.navigate("home") {
+                    navController.navigate("main") {
                         popUpTo("permission") { inclusive = true }
                     }
                 },
                 onSkip = {
-                    navController.navigate("home") {
+                    navController.navigate("main") {
                         popUpTo("permission") { inclusive = true }
                     }
                 }
             )
         }
         
-        composable("home") {
-            HomeScreenNew(
+        composable("main") {
+            MainScreenWithTabs(
                 onNavigateToSettings = {
                     navController.navigate("settings")
                 },
