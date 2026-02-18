@@ -50,6 +50,7 @@ fun HomeScreenNew(
     onNavigateToSettings: () -> Unit,
     onNavigateToTransactions: () -> Unit,
     onNavigateToAnalytics: () -> Unit = {},
+    showTopBar: Boolean = true,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -98,7 +99,7 @@ fun HomeScreenNew(
     
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            if (showTopBar) LargeTopAppBar(
                 title = { 
                     Text(
                         "EveryPaisa",
