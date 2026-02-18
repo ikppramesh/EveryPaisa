@@ -14,7 +14,83 @@
   <img src="https://img.shields.io/badge/Language-Kotlin-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License">
   <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg" alt="Privacy">
+  <img src="https://img.shields.io/badge/Version-1.1.0-blue.svg" alt="Version">
 </p>
+
+---
+
+## 📋 Changelog
+
+### Version 1.1.0 (February 18, 2026)
+
+#### 🎨 **Comprehensive Category System**
+- Added **30+ spending categories** covering global spending patterns
+- **New Categories**: Subscriptions, Gym/Fitness, Rent, Insurance, Gifts, Charity, Pets, Coffee/Tea, Alcohol, Gaming, Books, Fashion, Electronics, Furniture, Pharmacy, Parking, Laundry
+- Each category has unique **Material Design icons** and **color coding**
+- Circle background with category color at 15% opacity for better visibility
+
+#### 🤖 **Enhanced Auto-Categorization**
+- Smart merchant detection for **100+ popular merchants**
+- **Subscriptions**: Netflix, Prime Video, Spotify, Hotstar, YouTube Premium, Apple Music
+- **Fitness**: Cult.fit, gyms, sports centers
+- **Food & Beverages**: Coffee shops (Starbucks, CCD), restaurants (Swiggy, Zomato, McDonald's, KFC)
+- **Travel**: MakeMyTrip, IRCTC, Goibibo, OYO, airlines
+- **Telecom**: Airtel, JIO, VI, broadband providers
+- **Shopping**: Amazon, Flipkart, Myntra, AJIO
+- **Groceries**: Blinkit, BigBasket, Zepto, Dunzo, Instamart
+- **Education**: Udemy, Coursera, schools
+- **Healthcare**: Hospitals, pharmacies, clinics
+
+#### 🐛 **Bug Fixes**
+- Fixed app crash when clicking transactions in "View All" screen
+- Disabled navigation to non-existent transaction detail screen (temporary fix)
+- Removed broken transaction detail route to prevent crashes
+
+#### 🎯 **Category Icons Added**
+- Restaurant (Food & Dining)
+- Coffee Cup (Coffee/Tea)
+- Grocery Store (Groceries)
+- Shopping Bag (Shopping)
+- Car (Transportation)
+- Receipt (Bills & Utilities)
+- Movie (Entertainment)
+- Hospital (Healthcare)
+- Plane (Travel)
+- School (Education)
+- Subscriptions badge (Subscriptions)
+- Spa (Personal Care/Beauty)
+- Trending Up (Investments)
+- Bank (Salary/Income)
+- Money Off (Refunds)
+- Gift Card (Gifts)
+- Volunteer (Charity/Donation)
+- Paw (Pets)
+- Bar (Alcohol/Drinks)
+- Phone (Mobile/Recharge)
+- WiFi (Internet/Broadband)
+- TV (Streaming/OTT)
+- Gaming Controller (Games)
+- Book (Books/Reading)
+- Checkroom (Clothes/Fashion)
+- Devices (Electronics)
+- Weekend (Furniture)
+- Pharmacy (Medicine)
+- Parking (Parking)
+- Laundry Service (Laundry)
+
+#### 💾 **Technical Updates**
+- Enhanced `categorizeMerchant()` function with 150+ merchant keywords
+- Updated `getCategoryIcon()` with 30+ icon mappings
+- Updated `getCategoryColor()` with unique colors for each category
+- Improved merchant name matching with case-insensitive checks
+
+### Version 1.0.0 (Previous Releases)
+- Initial release with SMS parsing
+- Multi-currency support (INR, USD, EUR, GBP, AED, etc.)
+- Biometric app lock
+- Failed transaction handling
+- Analytics dashboard
+- 35+ bank support
 
 ---
 

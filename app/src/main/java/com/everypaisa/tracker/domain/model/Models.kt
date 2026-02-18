@@ -26,13 +26,95 @@ data class CurrencySummary(
     
     companion object {
         fun getCurrencySymbol(currency: String): String = when (currency.uppercase()) {
+            // Indian Rupee
             "INR" -> "₹"
+            // US Dollar
             "USD" -> "$"
+            // Euro
             "EUR" -> "€"
+            // British Pound
             "GBP" -> "£"
+            // Japanese Yen
+            "JPY" -> "¥"
+            // Chinese Yuan
+            "CNY" -> "¥"
+            // Swiss Franc
+            "CHF" -> "CHF"
+            // Canadian Dollar
+            "CAD" -> "CA$"
+            // Australian Dollar
+            "AUD" -> "A$"
+            // New Zealand Dollar
+            "NZD" -> "NZ$"
+            // Singapore Dollar
+            "SGD" -> "S$"
+            // Hong Kong Dollar
+            "HKD" -> "HK$"
+            // UAE Dirham
             "AED" -> "د.إ"
+            // Saudi Riyal
+            "SAR" -> "﷼"
+            // Qatari Riyal
+            "QAR" -> "﷼"
+            // Omani Rial
+            "OMR" -> "﷼"
+            // Kuwaiti Dinar
+            "KWD" -> "د.ك"
+            // Bahraini Dinar
+            "BHD" -> ".د.ب"
+            // Nepali Rupee
             "NPR" -> "₨"
-            "ETB" -> "ብር"
+            // Pakistani Rupee
+            "PKR" -> "₨"
+            // Sri Lankan Rupee
+            "LKR" -> "₨"
+            // Ethiopian Birr
+            "ETB" -> "Br"
+            // South African Rand
+            "ZAR" -> "R"
+            // Nigerian Naira
+            "NGN" -> "₦"
+            // Kenyan Shilling
+            "KES" -> "KSh"
+            // Egyptian Pound
+            "EGP" -> "£"
+            // Turkish Lira
+            "TRY" -> "₺"
+            // Russian Ruble
+            "RUB" -> "₽"
+            // Brazilian Real
+            "BRL" -> "R$"
+            // Mexican Peso
+            "MXN" -> "$"
+            // Argentine Peso
+            "ARS" -> "$"
+            // Chilean Peso
+            "CLP" -> "$"
+            // Colombian Peso
+            "COP" -> "$"
+            // Thai Baht
+            "THB" -> "฿"
+            // Malaysian Ringgit
+            "MYR" -> "RM"
+            // Indonesian Rupiah
+            "IDR" -> "Rp"
+            // Philippine Peso
+            "PHP" -> "₱"
+            // Vietnamese Dong
+            "VND" -> "₫"
+            // South Korean Won
+            "KRW" -> "₩"
+            // Taiwanese Dollar
+            "TWD" -> "NT$"
+            // Bangladeshi Taka
+            "BDT" -> "৳"
+            // Myanma Kyat
+            "MMK" -> "K"
+            // Cambodian Riel
+            "KHR" -> "៛"
+            // Lao Kip
+            "LAK" -> "₭"
+            // Default: return currency code
             else -> currency
         }
     }

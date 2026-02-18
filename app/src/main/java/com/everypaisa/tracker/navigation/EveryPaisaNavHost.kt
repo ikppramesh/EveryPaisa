@@ -59,7 +59,8 @@ fun EveryPaisaNavHost() {
             TransactionsScreen(
                 onNavigateBack = { navController.navigateUp() },
                 onTransactionClick = { transactionId ->
-                    navController.navigate("transaction_detail/$transactionId")
+                    // TODO: Navigate to transaction detail when screen is implemented
+                    // For now, do nothing to prevent crash
                 }
             )
         }

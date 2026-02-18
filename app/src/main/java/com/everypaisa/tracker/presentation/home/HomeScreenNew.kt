@@ -524,18 +524,18 @@ fun MultiCurrencySummaryCard(
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
                     )
                     
-                    // Right: International Summaries
+                    // Right: International Summaries with Currency Symbols
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(
-                            "🌍 International",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
                         multiCurrencySummary.internationalSummaries.forEach { intlSummary ->
+                            // Show currency symbol instead of "International" text
+                            Text(
+                                "${intlSummary.currencySymbol} ${intlSummary.currency}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             CurrencySummaryView(
                                 summary = intlSummary,
                                 isCompact = true
@@ -1171,28 +1171,82 @@ fun EnhancedTransactionCard(
 }
 
 fun getCategoryIcon(category: String) = when (category.lowercase()) {
-    "food & dining" -> Icons.Default.Restaurant
+    "food & dining", "food", "dining" -> Icons.Default.Restaurant
     "groceries" -> Icons.Default.LocalGroceryStore
     "shopping" -> Icons.Default.ShoppingBag
-    "transportation" -> Icons.Default.DirectionsCar
-    "bills & utilities" -> Icons.Default.Receipt
+    "transportation", "fuel", "transport" -> Icons.Default.DirectionsCar
+    "bills & utilities", "bills", "utilities" -> Icons.Default.Receipt
     "entertainment" -> Icons.Default.Movie
-    "healthcare" -> Icons.Default.LocalHospital
-    "travel" -> Icons.Default.Flight
-    "salary" -> Icons.Default.AccountBalance
+    "healthcare", "medical", "health" -> Icons.Default.LocalHospital
+    "travel", "vacation" -> Icons.Default.Flight
+    "education", "courses" -> Icons.Default.School
+    "subscriptions", "subscription" -> Icons.Default.Subscriptions
+    "personal care", "beauty", "salon" -> Icons.Default.Spa
+    "investments", "investment", "stocks" -> Icons.Default.TrendingUp
+    "salary", "income" -> Icons.Default.AccountBalance
+    "refunds", "refund" -> Icons.Default.MoneyOff
+    "cashback" -> Icons.Default.Paid
+    "transfers", "transfer" -> Icons.Default.SwapHoriz
+    "rent", "housing" -> Icons.Default.Home
+    "insurance" -> Icons.Default.Security
+    "gym", "fitness", "sports" -> Icons.Default.FitnessCenter
+    "gifts" -> Icons.Default.CardGiftcard
+    "charity", "donation" -> Icons.Default.VolunteerActivism
+    "pets" -> Icons.Default.Pets
+    "coffee", "tea" -> Icons.Default.LocalCafe
+    "alcohol", "drinks", "bar" -> Icons.Default.LocalBar
+    "phone", "mobile", "recharge" -> Icons.Default.PhoneAndroid
+    "internet", "wifi", "broadband" -> Icons.Default.Wifi
+    "streaming", "ott" -> Icons.Default.LiveTv
+    "games", "gaming" -> Icons.Default.SportsEsports
+    "books", "reading" -> Icons.Default.MenuBook
+    "clothes", "fashion" -> Icons.Default.Checkroom
+    "electronics" -> Icons.Default.Devices
+    "furniture", "home decor" -> Icons.Default.Weekend
+    "pharmacy", "medicine" -> Icons.Default.LocalPharmacy
+    "parking" -> Icons.Default.LocalParking
+    "laundry", "dry cleaning" -> Icons.Default.LocalLaundryService
+    "others", "other" -> Icons.Default.Category
     else -> Icons.Default.Category
 }
 
 fun getCategoryColor(category: String) = when (category.lowercase()) {
-    "food & dining" -> Color(0xFFFC8019)
-    "groceries" -> Color(0xFF5AC85A)
-    "shopping" -> Color(0xFFE91E63)
-    "transportation" -> Color(0xFF29B6F6)
-    "bills & utilities" -> Color(0xFFFFA726)
-    "entertainment" -> Color(0xFFAB47BC)
-    "healthcare" -> Color(0xFFEF5350)
-    "travel" -> Color(0xFF26C6DA)
-    "salary" -> Color(0xFF4CAF50)
+    "food & dining", "food", "dining" -> Color(0xFFFC8019) // Orange
+    "groceries" -> Color(0xFF5AC85A) // Green
+    "shopping" -> Color(0xFFE91E63) // Pink
+    "transportation", "fuel", "transport" -> Color(0xFF29B6F6) // Blue
+    "bills & utilities", "bills", "utilities" -> Color(0xFFFFA726) // Amber
+    "entertainment" -> Color(0xFFAB47BC) // Purple
+    "healthcare", "medical", "health" -> Color(0xFFEF5350) // Red
+    "travel", "vacation" -> Color(0xFF26C6DA) // Cyan
+    "education", "courses" -> Color(0xFF42A5F5) // Light Blue
+    "subscriptions", "subscription" -> Color(0xFF7E57C2) // Deep Purple
+    "personal care", "beauty", "salon" -> Color(0xFFEC407A) // Hot Pink
+    "investments", "investment", "stocks" -> Color(0xFF66BB6A) // Light Green
+    "salary", "income" -> Color(0xFF4CAF50) // Strong Green
+    "refunds", "refund" -> Color(0xFF8BC34A) // Light Green
+    "cashback" -> Color(0xFFCDDC39) // Lime
+    "transfers", "transfer" -> Color(0xFF78909C) // Blue Grey
+    "rent", "housing" -> Color(0xFF9C27B0) // Purple
+    "insurance" -> Color(0xFF3F51B5) // Indigo
+    "gym", "fitness", "sports" -> Color(0xFFFF5722) // Deep Orange
+    "gifts" -> Color(0xFFE91E63) // Pink
+    "charity", "donation" -> Color(0xFF9C27B0) // Purple
+    "pets" -> Color(0xFFFF9800) // Orange
+    "coffee", "tea" -> Color(0xFF795548) // Brown
+    "alcohol", "drinks", "bar" -> Color(0xFFFFC107) // Amber
+    "phone", "mobile", "recharge" -> Color(0xFF00BCD4) // Cyan
+    "internet", "wifi", "broadband" -> Color(0xFF2196F3) // Blue
+    "streaming", "ott" -> Color(0xFF673AB7) // Deep Purple
+    "games", "gaming" -> Color(0xFF9C27B0) // Purple
+    "books", "reading" -> Color(0xFF607D8B) // Blue Grey
+    "clothes", "fashion" -> Color(0xFFE91E63) // Pink
+    "electronics" -> Color(0xFF00BCD4) // Cyan
+    "furniture", "home decor" -> Color(0xFF795548) // Brown
+    "pharmacy", "medicine" -> Color(0xFFF44336) // Red
+    "parking" -> Color(0xFF9E9E9E) // Grey
+    "laundry", "dry cleaning" -> Color(0xFF03A9F4) // Light Blue
+    "others", "other" -> Color(0xFFBDBDBD) // Light Grey
     else -> Color(0xFFBDBDBD)
 }
 

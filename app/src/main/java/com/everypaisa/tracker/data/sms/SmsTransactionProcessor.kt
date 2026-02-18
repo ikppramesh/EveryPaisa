@@ -94,7 +94,7 @@ class SmsTransactionProcessor @Inject constructor(
             return false
         }
         
-        Log.d(TAG, "✅ Parsed: ${parsedTxn.transactionType} | ${parsedTxn.bankName} | ${parsedTxn.merchantName} | ₹${parsedTxn.amount} | acct:${parsedTxn.accountLast4} card:${parsedTxn.cardLast4}")
+        Log.d(TAG, "✅ Parsed: ${parsedTxn.transactionType} | ${parsedTxn.bankName} | ${parsedTxn.merchantName} | ${parsedTxn.currency} ${parsedTxn.amount} | acct:${parsedTxn.accountLast4} card:${parsedTxn.cardLast4}")
         
         try {
             // Generate hash to avoid duplicates
@@ -152,42 +152,130 @@ class SmsTransactionProcessor @Inject constructor(
             merchantName.contains("RESTAURANT", ignoreCase = true) ||
             merchantName.contains("CAFE", ignoreCase = true) ||
             merchantName.contains("DOMINOS", ignoreCase = true) ||
-            merchantName.contains("PIZZA", ignoreCase = true) -> "Food & Dining"
+            merchantName.contains("PIZZA", ignoreCase = true) ||
+            merchantName.contains("KFC", ignoreCase = true) ||
+            merchantName.contains("MCDONALD", ignoreCase = true) ||
+            merchantName.contains("BURGER", ignoreCase = true) ||
+            merchantName.contains("FOOD", ignoreCase = true) -> "Food & Dining"
+            
+            // Coffee & Tea
+            merchantName.contains("STARBUCKS", ignoreCase = true) ||
+            merchantName.contains("CAFE COFFEE DAY", ignoreCase = true) ||
+            merchantName.contains("CCD", ignoreCase = true) ||
+            merchantName.contains("COFFEE", ignoreCase = true) -> "Coffee"
+            
+            // Subscriptions
+            merchantName.contains("NETFLIX", ignoreCase = true) ||
+            merchantName.contains("PRIME", ignoreCase = true) ||
+            merchantName.contains("SPOTIFY", ignoreCase = true) ||
+            merchantName.contains("HOTSTAR", ignoreCase = true) ||
+            merchantName.contains("YOUTUBE PREMIUM", ignoreCase = true) ||
+            merchantName.contains("APPLE MUSIC", ignoreCase = true) ||
+            merchantName.contains("SUBSCRIPTION", ignoreCase = true) -> "Subscriptions"
             
             // Shopping
             merchantName.contains("AMAZON", ignoreCase = true) ||
             merchantName.contains("FLIPKART", ignoreCase = true) ||
             merchantName.contains("MYNTRA", ignoreCase = true) ||
-            merchantName.contains("SHOP", ignoreCase = true) -> "Shopping"
+            merchantName.contains("AJIO", ignoreCase = true) ||
+            merchantName.contains("SHOP", ignoreCase = true) ||
+            merchantName.contains("STORE", ignoreCase = true) -> "Shopping"
             
             // Groceries
             merchantName.contains("BLINKIT", ignoreCase = true) ||
             merchantName.contains("BIGBASKET", ignoreCase = true) ||
             merchantName.contains("INSTAMART", ignoreCase = true) ||
-            merchantName.contains("ZEPTO", ignoreCase = true) -> "Groceries"
+            merchantName.contains("ZEPTO", ignoreCase = true) ||
+            merchantName.contains("GROFERS", ignoreCase = true) ||
+            merchantName.contains("DUNZO", ignoreCase = true) ||
+            merchantName.contains("GROCERY", ignoreCase = true) -> "Groceries"
             
             // Transportation
             merchantName.contains("UBER", ignoreCase = true) ||
             merchantName.contains("OLA", ignoreCase = true) ||
             merchantName.contains("RAPIDO", ignoreCase = true) ||
             merchantName.contains("PETROL", ignoreCase = true) ||
-            merchantName.contains("FUEL", ignoreCase = true) -> "Transportation"
+            merchantName.contains("FUEL", ignoreCase = true) ||
+            merchantName.contains("NAYARA", ignoreCase = true) ||
+            merchantName.contains("HP PETROL", ignoreCase = true) ||
+            merchantName.contains("INDIAN OIL", ignoreCase = true) ||
+            merchantName.contains("BHARAT PETROLEUM", ignoreCase = true) -> "Transportation"
             
-            // Entertainment
-            merchantName.contains("NETFLIX", ignoreCase = true) ||
-            merchantName.contains("PRIME", ignoreCase = true) ||
-            merchantName.contains("SPOTIFY", ignoreCase = true) ||
-            merchantName.contains("HOTSTAR", ignoreCase = true) ||
-            merchantName.contains("BOOKMYSHOW", ignoreCase = true) -> "Entertainment"
+            // Gym & Fitness
+            merchantName.contains("GYM", ignoreCase = true) ||
+            merchantName.contains("FITNESS", ignoreCase = true) ||
+            merchantName.contains("CULT.FIT", ignoreCase = true) ||
+            merchantName.contains("CULTFIT", ignoreCase = true) ||
+            merchantName.contains("SPORTS", ignoreCase = true) ||
+            merchantName.contains("YOGA", ignoreCase = true) -> "Gym"
+            
+            // Entertainment (Movies, Events)
+            merchantName.contains("BOOKMYSHOW", ignoreCase = true) ||
+            merchantName.contains("PVR", ignoreCase = true) ||
+            merchantName.contains("INOX", ignoreCase = true) ||
+            merchantName.contains("CINEMA", ignoreCase = true) ||
+            merchantName.contains("MOVIE", ignoreCase = true) -> "Entertainment"
+            
+            // Phone/Mobile Recharge
+            merchantName.contains("AIRTEL", ignoreCase = true) ||
+            merchantName.contains("JIO", ignoreCase = true) ||
+            merchantName.contains("VODAFONE", ignoreCase = true) ||
+            merchantName.contains("VI", ignoreCase = true) ||
+            merchantName.contains("BSNL", ignoreCase = true) ||
+            merchantName.contains("RECHARGE", ignoreCase = true) ||
+            merchantName.contains("MOBILE", ignoreCase = true) -> "Phone"
+            
+            // Internet/Broadband
+            merchantName.contains("BROADBAND", ignoreCase = true) ||
+            merchantName.contains("INTERNET", ignoreCase = true) ||
+            merchantName.contains("WIFI", ignoreCase = true) ||
+            merchantName.contains("ACT FIBERNET", ignoreCase = true) -> "Internet"
             
             // Bills & Utilities
             merchantName.contains("ELECTRICITY", ignoreCase = true) ||
             merchantName.contains("WATER", ignoreCase = true) ||
             merchantName.contains("GAS", ignoreCase = true) ||
-            merchantName.contains("BROADBAND", ignoreCase = true) ||
-            merchantName.contains("AIRTEL", ignoreCase = true) ||
-            merchantName.contains("JIO", ignoreCase = true) ||
-            merchantName.contains("VODAFONE", ignoreCase = true) -> "Bills & Utilities"
+            merchantName.contains("LPG", ignoreCase = true) ||
+            merchantName.contains("BILL", ignoreCase = true) ||
+            merchantName.contains("UTILITY", ignoreCase = true) -> "Bills & Utilities"
+            
+            // Healthcare & Medical
+            merchantName.contains("HOSPITAL", ignoreCase = true) ||
+            merchantName.contains("CLINIC", ignoreCase = true) ||
+            merchantName.contains("PHARMACY", ignoreCase = true) ||
+            merchantName.contains("APOLLO", ignoreCase = true) ||
+            merchantName.contains("MEDICAL", ignoreCase = true) ||
+            merchantName.contains("DOCTOR", ignoreCase = true) ||
+            merchantName.contains("HEALTH", ignoreCase = true) -> "Healthcare"
+            
+            // Insurance
+            merchantName.contains("INSURANCE", ignoreCase = true) ||
+            merchantName.contains("LIC", ignoreCase = true) ||
+            merchantName.contains("POLICY", ignoreCase = true) -> "Insurance"
+            
+            // Education
+            merchantName.contains("SCHOOL", ignoreCase = true) ||
+            merchantName.contains("COLLEGE", ignoreCase = true) ||
+            merchantName.contains("UNIVERSITY", ignoreCase = true) ||
+            merchantName.contains("COURSE", ignoreCase = true) ||
+            merchantName.contains("EDUCATION", ignoreCase = true) ||
+            merchantName.contains("UDEMY", ignoreCase = true) ||
+            merchantName.contains("COURSERA", ignoreCase = true) -> "Education"
+            
+            // Rent
+            merchantName.contains("RENT", ignoreCase = true) ||
+            merchantName.contains("LEASE", ignoreCase = true) ||
+            merchantName.contains("HOUSING", ignoreCase = true) -> "Rent"
+            
+            // Travel
+            merchantName.contains("MAKEMYTRIP", ignoreCase = true) ||
+            merchantName.contains("GOIBIBO", ignoreCase = true) ||
+            merchantName.contains("IRCTC", ignoreCase = true) ||
+            merchantName.contains("INDIGO", ignoreCase = true) ||
+            merchantName.contains("SPICEJET", ignoreCase = true) ||
+            merchantName.contains("AIRLINE", ignoreCase = true) ||
+            merchantName.contains("HOTEL", ignoreCase = true) ||
+            merchantName.contains("OYO", ignoreCase = true) -> "Travel"
             
             // Income types
             type == ParserTransactionType.CREDIT -> {

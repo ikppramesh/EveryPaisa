@@ -13,48 +13,135 @@ private object ParserUtils {
     fun extractCurrency(message: String): String {
         val lower = message.lowercase()
         
-        // Check for explicit currency codes first
+        // PRIORITY 1: Check for currency symbols directly attached to amounts (₹2172.29, $10.00, €50.00)
+        val symbolPatterns = listOf(
+            "₹\\s*[\\d,]+\\.?\\d*" to "INR",
+            "\\$\\s*[\\d,]+\\.?\\d*" to "USD",
+            "€\\s*[\\d,]+\\.?\\d*" to "EUR",
+            "£\\s*[\\d,]+\\.?\\d*" to "GBP",
+            "¥\\s*[\\d,]+\\.?\\d*" to "JPY",
+            "د\\.إ\\s*[\\d,]+\\.?\\d*" to "AED",
+            "﷼\\s*[\\d,]+\\.?\\d*" to "SAR",
+            "₨\\s*[\\d,]+\\.?\\d*" to "NPR",
+            "₦\\s*[\\d,]+\\.?\\d*" to "NGN",
+            "₺\\s*[\\d,]+\\.?\\d*" to "TRY",
+            "₽\\s*[\\d,]+\\.?\\d*" to "RUB",
+            "₱\\s*[\\d,]+\\.?\\d*" to "PHP",
+            "₫\\s*[\\d,]+\\.?\\d*" to "VND",
+            "₩\\s*[\\d,]+\\.?\\d*" to "KRW",
+            "฿\\s*[\\d,]+\\.?\\d*" to "THB",
+            "৳\\s*[\\d,]+\\.?\\d*" to "BDT"
+        )
+        
+        for ((pattern, currency) in symbolPatterns) {
+            if (Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(message).find()) {
+                return currency
+            }
+        }
+        
+        // PRIORITY 2: Check for currency codes directly before amounts (USD 10.00, AED 500.00, EUR 50.00)
+        val codeWithAmountPatterns = listOf(
+            "USD\\s+[\\d,]+\\.?\\d*" to "USD",
+            "AED\\s+[\\d,]+\\.?\\d*" to "AED",
+            "EUR\\s+[\\d,]+\\.?\\d*" to "EUR",
+            "GBP\\s+[\\d,]+\\.?\\d*" to "GBP",
+            "SAR\\s+[\\d,]+\\.?\\d*" to "SAR",
+            "QAR\\s+[\\d,]+\\.?\\d*" to "QAR",
+            "OMR\\s+[\\d,]+\\.?\\d*" to "OMR",
+            "KWD\\s+[\\d,]+\\.?\\d*" to "KWD",
+            "BHD\\s+[\\d,]+\\.?\\d*" to "BHD",
+            "CAD\\s+[\\d,]+\\.?\\d*" to "CAD",
+            "AUD\\s+[\\d,]+\\.?\\d*" to "AUD",
+            "SGD\\s+[\\d,]+\\.?\\d*" to "SGD",
+            "HKD\\s+[\\d,]+\\.?\\d*" to "HKD",
+            "NZD\\s+[\\d,]+\\.?\\d*" to "NZD",
+            "JPY\\s+[\\d,]+\\.?\\d*" to "JPY",
+            "CNY\\s+[\\d,]+\\.?\\d*" to "CNY",
+            "CHF\\s+[\\d,]+\\.?\\d*" to "CHF",
+            "NPR\\s+[\\d,]+\\.?\\d*" to "NPR",
+            "PKR\\s+[\\d,]+\\.?\\d*" to "PKR",
+            "LKR\\s+[\\d,]+\\.?\\d*" to "LKR",
+            "BDT\\s+[\\d,]+\\.?\\d*" to "BDT",
+            "THB\\s+[\\d,]+\\.?\\d*" to "THB",
+            "MYR\\s+[\\d,]+\\.?\\d*" to "MYR",
+            "IDR\\s+[\\d,]+\\.?\\d*" to "IDR",
+            "PHP\\s+[\\d,]+\\.?\\d*" to "PHP",
+            "VND\\s+[\\d,]+\\.?\\d*" to "VND",
+            "KRW\\s+[\\d,]+\\.?\\d*" to "KRW",
+            "TRY\\s+[\\d,]+\\.?\\d*" to "TRY",
+            "RUB\\s+[\\d,]+\\.?\\d*" to "RUB",
+            "ZAR\\s+[\\d,]+\\.?\\d*" to "ZAR",
+            "NGN\\s+[\\d,]+\\.?\\d*" to "NGN",
+            "ETB\\s+[\\d,]+\\.?\\d*" to "ETB"
+        )
+        
+        for ((pattern, currency) in codeWithAmountPatterns) {
+            if (Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(message).find()) {
+                return currency
+            }
+        }
+        
+        // PRIORITY 3: Check for explicit currency keywords and location hints
         val currencyPatterns = mapOf(
-            "usd" to "USD",
-            "us dollar" to "USD",
-            "dollar" to "USD",
-            "$" to "USD",
-            "eur" to "EUR",
-            "euro" to "EUR",
-            "€" to "EUR",
-            "gbp" to "GBP",
-            "pound" to "GBP",
-            "£" to "GBP",
+            // Middle East (GCC Countries)
             "aed" to "AED",
             "dirham" to "AED",
-            "د.إ" to "AED",
             "dubai" to "AED",
             "uae" to "AED",
             "abu dhabi" to "AED",
             "sharjah" to "AED",
-            "npr" to "NPR",
-            "nepali rupee" to "NPR",
-            "₨" to "NPR",
-            "etb" to "ETB",
-            "birr" to "ETB",
-            "ብር" to "ETB",
-            "cad" to "CAD",
-            "canadian dollar" to "CAD",
-            "aud" to "AUD",
-            "australian dollar" to "AUD",
-            "sgd" to "SGD",
-            "singapore dollar" to "SGD",
-            "jpy" to "JPY",
+            "sar" to "SAR",
+            "riyal" to "SAR",
+            "saudi" to "SAR",
+            "qar" to "QAR",
+            "qatar" to "QAR",
+            "omr" to "OMR",
+            "oman" to "OMR",
+            "kwd" to "KWD",
+            "kuwait" to "KWD",
+            "bhd" to "BHD",
+            "bahrain" to "BHD",
+            // Major Currencies
+            "us dollar" to "USD",
+            "euro" to "EUR",
+            "pound sterling" to "GBP",
             "yen" to "JPY",
-            "¥" to "JPY",
-            "chf" to "CHF",
-            "swiss franc" to "CHF"
+            "yuan" to "CNY",
+            "swiss franc" to "CHF",
+            // Commonwealth
+            "canadian dollar" to "CAD",
+            "australian dollar" to "AUD",
+            "singapore dollar" to "SGD",
+            // South Asia
+            "nepali rupee" to "NPR",
+            "pakistani rupee" to "PKR",
+            "sri lankan rupee" to "LKR",
+            "taka" to "BDT",
+            // Southeast Asia
+            "baht" to "THB",
+            "ringgit" to "MYR",
+            "rupiah" to "IDR",
+            "peso" to "PHP",
+            "dong" to "VND",
+            "won" to "KRW",
+            // Others
+            "lira" to "TRY",
+            "ruble" to "RUB",
+            "real" to "BRL",
+            "rand" to "ZAR",
+            "naira" to "NGN",
+            "birr" to "ETB"
         )
         
         for ((pattern, currency) in currencyPatterns) {
             if (lower.contains(pattern)) {
                 return currency
             }
+        }
+        
+        // PRIORITY 4: Check for Rs/INR which is common in Indian SMS
+        if (lower.contains("rs.") || lower.contains("rs ") || lower.contains("inr")) {
+            return "INR"
         }
         
         // Default to INR if no other currency found
@@ -66,21 +153,65 @@ private object ParserUtils {
         
         // Try currency-specific patterns first
         val currencyPatterns = when (currency) {
-            "USD" -> listOf(
-                Pattern.compile("USD\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("\\$\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("(?:amt|amount)\\s*(?:of\\s*)?USD\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            "USD", "CAD", "AUD", "NZD", "SGD", "HKD" -> listOf(
+                Pattern.compile("${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("\\$\\s*([\\d,]+\\.?\\d*)"),
+                Pattern.compile("(?:amt|amount)\\s*(?:of\\s*)?${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
             )
             "EUR" -> listOf(
                 Pattern.compile("EUR\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("€\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+                Pattern.compile("€\\s*([\\d,]+\\.?\\d*)")
             )
             "GBP" -> listOf(
                 Pattern.compile("GBP\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-                Pattern.compile("£\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+                Pattern.compile("£\\s*([\\d,]+\\.?\\d*)")
             )
-            "AED" -> listOf(
-                Pattern.compile("AED\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            "AED", "SAR", "QAR", "OMR", "KWD", "BHD" -> listOf(
+                Pattern.compile("${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("(?:credited|debited)(?:\\s+to)?(?:\\s+A/C)?\\s+[^0-9]*${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("(?:amt|amount)\\s*(?:of\\s*)?${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+            )
+            "JPY", "CNY", "KRW" -> listOf(
+                Pattern.compile("${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("¥\\s*([\\d,]+\\.?\\d*)"),
+                Pattern.compile("₩\\s*([\\d,]+\\.?\\d*)")
+            )
+            "NPR", "PKR", "LKR" -> listOf(
+                Pattern.compile("${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("₨\\s*([\\d,]+\\.?\\d*)")
+            )
+            "THB" -> listOf(
+                Pattern.compile("THB\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("฿\\s*([\\d,]+\\.?\\d*)")
+            )
+            "PHP" -> listOf(
+                Pattern.compile("PHP\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("₱\\s*([\\d,]+\\.?\\d*)")
+            )
+            "VND" -> listOf(
+                Pattern.compile("VND\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("₫\\s*([\\d,]+\\.?\\d*)")
+            )
+            "TRY" -> listOf(
+                Pattern.compile("TRY\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("₺\\s*([\\d,]+\\.?\\d*)")
+            )
+            "RUB" -> listOf(
+                Pattern.compile("RUB\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("₽\\s*([\\d,]+\\.?\\d*)")
+            )
+            "BDT" -> listOf(
+                Pattern.compile("BDT\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("৳\\s*([\\d,]+\\.?\\d*)")
+            )
+            "NGN" -> listOf(
+                Pattern.compile("NGN\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("₦\\s*([\\d,]+\\.?\\d*)")
+            )
+            "CHF", "ZAR", "MYR", "IDR", "BRL", "MXN", "ARS", "CLP", "COP", "TWD", 
+            "ETB", "KES", "EGP", "MMK", "KHR", "LAK" -> listOf(
+                Pattern.compile("${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+                Pattern.compile("(?:amt|amount)\\s*(?:of\\s*)?${currency}\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
             )
             else -> listOf()
         }
@@ -91,7 +222,7 @@ private object ParserUtils {
             if (m.find()) {
                 val s = m.group(1)?.replace(",", "") ?: continue
                 val bd = try { BigDecimal(s) } catch (_: Exception) { continue }
-                if (bd > BigDecimal.ZERO && bd < BigDecimal("5000000")) return bd
+                if (bd > BigDecimal.ZERO && bd < BigDecimal("10000000")) return bd
             }
         }
         
@@ -237,6 +368,107 @@ class EmiratesNBDParser : BankParser {
             transactionType = type,
             dateTime = LocalDateTime.now(),
             accountLast4 = accountLast4,
+            rawMessage = message,
+            currency = currency
+        )
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Citi Bank (International)
+// ──────────────────────────────────────────────────────────────────
+class CitiBankParser : BankParser {
+    
+    private val senders = listOf("CITI", "CITIBANK")
+    
+    override fun canParse(sender: String, message: String): Boolean {
+        val senderMatch = senders.any { sender.contains(it, ignoreCase = true) }
+        val msgMatch = message.contains("Citi", ignoreCase = true) || 
+                      message.contains("Citibank", ignoreCase = true)
+        return senderMatch || msgMatch
+    }
+    
+    override fun parse(sender: String, message: String): ParsedTransaction? {
+        val amount = ParserUtils.extractAmount(message) ?: return null
+        val currency = ParserUtils.extractCurrency(message)
+        val type = ParserUtils.determineType(message)
+        val merchant = ParserUtils.extractMerchant(message, "Citibank")
+        val accountLast4 = ParserUtils.extractAccountLast4(message)
+        val cardLast4 = ParserUtils.extractCardLast4(message)
+        
+        return ParsedTransaction(
+            amount = amount,
+            merchantName = merchant,
+            bankName = "Citibank",
+            transactionType = type,
+            dateTime = LocalDateTime.now(),
+            accountLast4 = accountLast4,
+            cardLast4 = cardLast4,
+            rawMessage = message,
+            currency = currency
+        )
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// HSBC (International)
+// ──────────────────────────────────────────────────────────────────
+class HSBCParser : BankParser {
+    
+    override fun canParse(sender: String, message: String): Boolean {
+        return sender.contains("HSBC", ignoreCase = true) ||
+               message.contains("HSBC", ignoreCase = true)
+    }
+    
+    override fun parse(sender: String, message: String): ParsedTransaction? {
+        val amount = ParserUtils.extractAmount(message) ?: return null
+        val currency = ParserUtils.extractCurrency(message)
+        val type = ParserUtils.determineType(message)
+        val merchant = ParserUtils.extractMerchant(message, "HSBC")
+        val accountLast4 = ParserUtils.extractAccountLast4(message)
+        val cardLast4 = ParserUtils.extractCardLast4(message)
+        
+        return ParsedTransaction(
+            amount = amount,
+            merchantName = merchant,
+            bankName = "HSBC",
+            transactionType = type,
+            dateTime = LocalDateTime.now(),
+            accountLast4 = accountLast4,
+            cardLast4 = cardLast4,
+            rawMessage = message,
+            currency = currency
+        )
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Standard Chartered (International)
+// ──────────────────────────────────────────────────────────────────
+class StandardCharteredParser : BankParser {
+    
+    override fun canParse(sender: String, message: String): Boolean {
+        return sender.contains("SC", ignoreCase = true) && sender.contains("BANK", ignoreCase = true) ||
+               message.contains("Standard Chartered", ignoreCase = true) ||
+               message.contains("StanChart", ignoreCase = true)
+    }
+    
+    override fun parse(sender: String, message: String): ParsedTransaction? {
+        val amount = ParserUtils.extractAmount(message) ?: return null
+        val currency = ParserUtils.extractCurrency(message)
+        val type = ParserUtils.determineType(message)
+        val merchant = ParserUtils.extractMerchant(message, "Standard Chartered")
+        val accountLast4 = ParserUtils.extractAccountLast4(message)
+        val cardLast4 = ParserUtils.extractCardLast4(message)
+        
+        return ParsedTransaction(
+            amount = amount,
+            merchantName = merchant,
+            bankName = "Standard Chartered",
+            transactionType = type,
+            dateTime = LocalDateTime.now(),
+            accountLast4 = accountLast4,
+            cardLast4 = cardLast4,
             rawMessage = message,
             currency = currency
         )

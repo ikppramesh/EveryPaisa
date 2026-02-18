@@ -3,6 +3,7 @@ package com.everypaisa.parser
 class BankParserFactory {
     
     private val parsers: List<BankParser> = listOf(
+        // Indian Banks
         HDFCBankParser(),
         ICICIBankParser(),
         SBIParser(),
@@ -14,7 +15,12 @@ class BankParserFactory {
         BOBParser(),
         CanaraParser(),
         UnionBankParser(),
-        EmiratesNBDParser(), // UAE bank
+        // International Banks
+        EmiratesNBDParser(), // UAE
+        CitiBankParser(), // International
+        HSBCParser(), // International
+        StandardCharteredParser(), // International
+        // UPI Apps
         GooglePayParser(),
         PhonePeParser(),
         PaytmParser(),
