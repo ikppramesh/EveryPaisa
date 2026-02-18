@@ -327,6 +327,54 @@ class SmsTransactionProcessor @Inject constructor(
             return true
         }
         
+        // Loan spam/scam messages
+        if (lower.contains("loan") && (
+                lower.contains("approved") ||
+                lower.contains("pre-approved") ||
+                lower.contains("pre approved") ||
+                lower.contains("eligible") ||
+                lower.contains("get instant") ||
+                lower.contains("apply now") ||
+                lower.contains("take loan") ||
+                lower.contains("avail") ||
+                lower.contains("personal loan") ||
+                lower.contains("instant loan") ||
+                lower.contains("quick loan") ||
+                lower.contains("easy loan") ||
+                lower.contains("loan offer") ||
+                lower.contains("loan approval") ||
+                lower.contains("loan upto") ||
+                lower.contains("loan up to") ||
+                lower.contains("loan amount") ||
+                lower.contains("disburse") ||
+                lower.contains("loan limit") ||
+                lower.contains("credit line")
+            )) {
+            return true
+        }
+        
+        // Credit card offers
+        if ((lower.contains("credit card") || lower.contains("cc")) && (
+                lower.contains("apply") ||
+                lower.contains("offer") ||
+                lower.contains("pre-approved") ||
+                lower.contains("eligible") ||
+                lower.contains("get your")
+            )) {
+            return true
+        }
+        
+        // Generic financial spam
+        if (lower.contains("apply for") ||
+            lower.contains("get money") ||
+            lower.contains("instant approval") ||
+            lower.contains("no documents") ||
+            lower.contains("paperless") && lower.contains("loan") ||
+            lower.contains("100% approval") ||
+            lower.contains("guaranteed approval")) {
+            return true
+        }
+        
         return false
     }
     
