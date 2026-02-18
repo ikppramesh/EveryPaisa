@@ -12,6 +12,12 @@ import java.util.regex.Pattern
 class GenericBankParser : BankParser {
     
     private val amountPatterns = listOf(
+        // Multi-currency patterns
+        Pattern.compile("AED\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("USD\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("EUR\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("GBP\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
+        // INR patterns
         Pattern.compile("(?:Rs\\.?|INR|₹)\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
         Pattern.compile("amt\\s*(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
         Pattern.compile("amount\\s*(?:of\\s*)?(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
@@ -63,6 +69,7 @@ class GenericBankParser : BankParser {
             val accountLast4 = extractAccountNumber(message)
             val cardLast4 = extractCardNumber(message)
             val paymentMethod = detectPaymentMethod(message)
+            val currency = extractCurrency(message)
             
             return ParsedTransaction(
                 amount = amount,
@@ -72,7 +79,8 @@ class GenericBankParser : BankParser {
                 dateTime = LocalDateTime.now(),
                 accountLast4 = accountLast4,
                 cardLast4 = cardLast4,
-                rawMessage = message
+                rawMessage = message,
+                currency = currency
             )
         } catch (e: Exception) {
             return null
@@ -236,5 +244,17 @@ class GenericBankParser : BankParser {
             }
         }
         return null
+    }
+    
+    private fun extractCurrency(message: String): String {
+        val lower = message.lowercase()
+        return when {
+            lower.contains("aed") || lower.contains("dirham") || lower.contains("د.إ") -> "AED"
+            lower.contains("usd") || lower.contains("dollar") && !lower.contains("australian") -> "USD"
+            lower.contains("eur") || lower.contains("euro") || lower.contains("€") -> "EUR"
+            lower.contains("gbp") || lower.contains("pound") || lower.contains("£") -> "GBP"
+            lower.contains("dubai") || lower.contains("uae") -> "AED"
+            else -> "INR"
+        }
     }
 }

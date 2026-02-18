@@ -14,6 +14,7 @@ class BankParserFactory {
         BOBParser(),
         CanaraParser(),
         UnionBankParser(),
+        EmiratesNBDParser(), // UAE bank
         GooglePayParser(),
         PhonePeParser(),
         PaytmParser(),

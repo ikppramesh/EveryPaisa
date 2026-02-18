@@ -193,6 +193,57 @@ private object ParserUtils {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Emirates NBD Bank (UAE)
+// ──────────────────────────────────────────────────────────────────
+class EmiratesNBDParser : BankParser {
+    
+    private val senders = listOf("EMIRATESNBD", "ENBDBANK", "ENBD", "Emirates")
+    
+    override fun canParse(sender: String, message: String): Boolean {
+        val senderMatch = senders.any { sender.contains(it, ignoreCase = true) }
+        val msgMatch = message.contains("EmiratesNBD", ignoreCase = true) ||
+                      message.contains("Emirates NBD", ignoreCase = true) ||
+                      message.contains("ENBD", ignoreCase = true)
+        return senderMatch || msgMatch
+    }
+    
+    override fun parse(sender: String, message: String): ParsedTransaction? {
+        val amount = ParserUtils.extractAmount(message) ?: return null
+        val currency = ParserUtils.extractCurrency(message)
+        val type = ParserUtils.determineType(message)
+        
+        // Extract account number (XX1234 format)
+        val accountPattern = Pattern.compile("A/C\\s+XX(\\d{4})", Pattern.CASE_INSENSITIVE)
+        val accountMatcher = accountPattern.matcher(message)
+        val accountLast4 = if (accountMatcher.find()) accountMatcher.group(1) else null
+        
+        // Extract merchant from reference
+        val merchant = if (message.contains("Ref:", ignoreCase = true)) {
+            val refPattern = Pattern.compile("Ref:\\s*([^.]+)", Pattern.CASE_INSENSITIVE)
+            val refMatcher = refPattern.matcher(message)
+            if (refMatcher.find()) {
+                refMatcher.group(1)?.trim()?.replace("Avl Bal", "")?.trim() ?: "Emirates NBD"
+            } else {
+                "Emirates NBD"
+            }
+        } else {
+            ParserUtils.extractMerchant(message, "Emirates NBD")
+        }
+        
+        return ParsedTransaction(
+            amount = amount,
+            merchantName = merchant,
+            bankName = "Emirates NBD",
+            transactionType = type,
+            dateTime = LocalDateTime.now(),
+            accountLast4 = accountLast4,
+            rawMessage = message,
+            currency = currency
+        )
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
 // HDFC Bank
 // ──────────────────────────────────────────────────────────────────
 class HDFCBankParser : BankParser {
