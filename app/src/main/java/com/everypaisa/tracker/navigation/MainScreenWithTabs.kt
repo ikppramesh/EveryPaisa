@@ -1,17 +1,31 @@
 package com.everypaisa.tracker.navigation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.everypaisa.tracker.presentation.home.HomeScreenNew
 import com.everypaisa.tracker.presentation.regional.RegionalHomeScreen
+import com.everypaisa.tracker.worker.OptimizedSmsReaderWorker
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Add a new country here — that's all you need.
@@ -93,7 +107,68 @@ fun MainScreenWithTabs(
     var selectedTab by remember { mutableIntStateOf(0) }
     val current = countryTabs[selectedTab]
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isScanning by remember { mutableStateOf(false) }
+
+    fun triggerScan() {
+        scope.launch {
+            isScanning = true
+            snackbarHostState.showSnackbar("📱 Scanning SMS messages...")
+            val workRequest = OneTimeWorkRequestBuilder<OptimizedSmsReaderWorker>().build()
+            val workManager = WorkManager.getInstance(context)
+            workManager.enqueue(workRequest)
+            var done = false
+            var attempts = 0
+            while (!done && attempts < 60) {
+                delay(1000)
+                attempts++
+                val info = workManager.getWorkInfoById(workRequest.id).get()
+                when (info?.state) {
+                    WorkInfo.State.SUCCEEDED -> {
+                        done = true
+                        snackbarHostState.showSnackbar("✅ Scan complete! Transactions updated")
+                    }
+                    WorkInfo.State.FAILED -> {
+                        done = true
+                        snackbarHostState.showSnackbar("❌ Scan failed. Try again.")
+                    }
+                    WorkInfo.State.CANCELLED -> {
+                        done = true
+                        snackbarHostState.showSnackbar("⚠️ Scan cancelled")
+                    }
+                    else -> { /* still running */ }
+                }
+            }
+            if (!done) snackbarHostState.showSnackbar("⏰ Still scanning — transactions will appear shortly.")
+            isScanning = false
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.READ_SMS] == true &&
+                permissions[Manifest.permission.RECEIVE_SMS] == true
+        if (granted) triggerScan()
+        else scope.launch {
+            snackbarHostState.showSnackbar("⚠️ SMS permission required to scan transactions")
+        }
+    }
+
+    fun startScan() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (hasPermission) triggerScan()
+        else permissionLauncher.launch(
+            arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
+        )
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column {
                 // ── Shared app bar ──────────────────────────────────────────
@@ -113,6 +188,20 @@ fun MainScreenWithTabs(
                         }
                     },
                     actions = {
+                        // Scan / Sync button
+                        IconButton(
+                            onClick = { startScan() },
+                            enabled = !isScanning
+                        ) {
+                            if (isScanning) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(Icons.Default.Sync, contentDescription = "Scan SMS")
+                            }
+                        }
                         IconButton(onClick = onNavigateToAnalytics) {
                             Icon(Icons.Default.BarChart, contentDescription = "Analytics")
                         }
