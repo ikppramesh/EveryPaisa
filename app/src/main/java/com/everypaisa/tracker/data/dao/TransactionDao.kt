@@ -107,6 +107,36 @@ interface TransactionDao {
     ): Flow<List<TransactionEntity>>
     
     @Query("""
+        SELECT COUNT(*) FROM transactions
+        WHERE is_deleted = 0
+        AND amount = :amount
+        AND bank_name = :bankName
+        AND account_last4 = :accountLast4
+        AND date_time BETWEEN :startTime AND :endTime
+    """)
+    suspend fun countDuplicatesInWindow(
+        amount: BigDecimal,
+        bankName: String,
+        accountLast4: String,
+        startTime: Long,
+        endTime: Long
+    ): Int
+
+    @Query("""
+        SELECT COUNT(*) FROM transactions
+        WHERE is_deleted = 0
+        AND amount = :amount
+        AND date_time BETWEEN :startTime AND :endTime
+        AND (bank_name = :bankName OR account_last4 IS NULL)
+    """)
+    suspend fun countDuplicatesByAmountAndTime(
+        amount: BigDecimal,
+        bankName: String,
+        startTime: Long,
+        endTime: Long
+    ): Int
+
+    @Query("""
         SELECT * FROM transactions
         WHERE is_deleted = 0
         AND amount BETWEEN :minAmount AND :maxAmount

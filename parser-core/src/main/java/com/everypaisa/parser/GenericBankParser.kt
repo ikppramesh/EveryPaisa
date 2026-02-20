@@ -26,34 +26,41 @@ class GenericBankParser : BankParser {
     
     // Debit keywords — money going OUT
     private val debitKeywords = listOf(
-        "debited", "debit", "spent", "paid", "withdrawn", "purchase", 
-        "payment", "charged", "used at", "deducted", "sent", "txn of",
-        "transaction of", "your txn"
+        "debited", "debit", "spent", "withdrawn", "purchase",
+        "charged", "used at", "deducted", "sent to", "txn of",
+        "transaction of", "your txn", "payment made", "paid to",
+        "payment done", "amount paid"
     )
-    
-    // Credit keywords — money coming IN
-    private val creditKeywords = listOf(
-        "credited to", "credit to", "received", "deposited", "refund", 
-        "cashback", "salary credited", "reversed", "credited your"
+
+    // Strong credit keywords — money definitely coming IN (high confidence)
+    private val strongCreditKeywords = listOf(
+        "credited to your", "credited to acct", "credited to a/c",
+        "credited in your", "amount credited", "has been credited",
+        "salary credited", "cashback credited", "refund credited",
+        "interest credited", "reward credited", "credited by"
+    )
+
+    // Weak credit keywords — may appear in debit SMS too
+    private val weakCreditKeywords = listOf(
+        "received", "deposited", "refund", "cashback", "reversed",
+        "credit to your", "credited your"
     )
     
     override fun canParse(sender: String, message: String): Boolean {
         val messageLower = message.lowercase()
-        
-        // Must contain amount
+
         val hasAmount = amountPatterns.any { it.matcher(message).find() }
-        
-        // Must contain transaction keywords
+
         val hasTransactionKeyword = debitKeywords.any { messageLower.contains(it) } ||
-                                   creditKeywords.any { messageLower.contains(it) }
-        
-        // Must contain account/card reference
-        val hasAccountRef = messageLower.contains("a/c") || 
-                           messageLower.contains("account") ||
-                           messageLower.contains("card") ||
-                           messageLower.contains("xx") ||
-                           messageLower.contains("upi")
-        
+                strongCreditKeywords.any { messageLower.contains(it) } ||
+                weakCreditKeywords.any { messageLower.contains(it) }
+
+        val hasAccountRef = messageLower.contains("a/c") ||
+                messageLower.contains("account") ||
+                messageLower.contains("card") ||
+                messageLower.contains("xx") ||
+                messageLower.contains("upi")
+
         return hasAmount && hasTransactionKeyword && hasAccountRef
     }
     
@@ -105,30 +112,30 @@ class GenericBankParser : BankParser {
     
     private fun determineTransactionType(message: String): TransactionType {
         val messageLower = message.lowercase()
-        
-        // IMPORTANT: Check debit FIRST because credit card debits contain "credit" word
-        // "credit card" context = DEBIT (money going out via credit card)
-        val isCreditCardContext = messageLower.contains("credit card") || 
-                                 messageLower.contains("cr card") ||
-                                 messageLower.contains("cc ending") ||
-                                 messageLower.contains("credit/debit card")
-        
-        // Check for explicit debit signals
+
+        // "credit card" context = money going OUT via credit card
+        val isCreditCardContext = messageLower.contains("credit card") ||
+                messageLower.contains("cr card") ||
+                messageLower.contains("cc ending") ||
+                messageLower.contains("credit/debit card")
+
         val hasDebitKeyword = debitKeywords.any { messageLower.contains(it) }
-        
-        // Check for explicit credit (money IN) signals
-        val hasCreditKeyword = creditKeywords.any { messageLower.contains(it) }
-        
+        val hasStrongCreditKeyword = strongCreditKeywords.any { messageLower.contains(it) }
+        val hasWeakCreditKeyword = weakCreditKeywords.any { messageLower.contains(it) }
+
         return when {
-            // If both debit and credit keywords present, debit wins
-            hasDebitKeyword && hasCreditKeyword -> TransactionType.DEBIT
-            // Credit card context + no explicit credit-to/credited = DEBIT
-            isCreditCardContext && !hasCreditKeyword -> TransactionType.DEBIT
-            // Explicit debit
+            // Strong credit signal always wins (e.g. "amount credited to your a/c")
+            hasStrongCreditKeyword && !isCreditCardContext -> TransactionType.CREDIT
+            // Credit card context = debit regardless of "credit" word in the message
+            isCreditCardContext -> TransactionType.DEBIT
+            // Explicit debit with no strong credit signal
+            hasDebitKeyword && !hasStrongCreditKeyword -> TransactionType.DEBIT
+            // Weak credit with no debit signal
+            hasWeakCreditKeyword && !hasDebitKeyword -> TransactionType.CREDIT
+            // Both debit and weak credit → debit wins (e.g. "payment received" on debit SMS)
             hasDebitKeyword -> TransactionType.DEBIT
-            // Explicit credit (money coming in)
-            hasCreditKeyword -> TransactionType.CREDIT
-            // Default: debit
+            hasWeakCreditKeyword -> TransactionType.CREDIT
+            // Default
             else -> TransactionType.DEBIT
         }
     }

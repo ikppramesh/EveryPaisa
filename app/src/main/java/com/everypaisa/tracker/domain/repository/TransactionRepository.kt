@@ -22,4 +22,5 @@ interface TransactionRepository {
     suspend fun deleteTransaction(id: Long)
     suspend fun restoreTransaction(id: Long)
     suspend fun getTransactionsByAmountRange(minAmount: Double, maxAmount: Double, afterDate: Long): List<TransactionEntity>
+    suspend fun countDuplicatesInWindow(amount: java.math.BigDecimal, bankName: String, startTime: Long, endTime: Long): Int
 }

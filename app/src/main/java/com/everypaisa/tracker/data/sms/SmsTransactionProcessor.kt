@@ -129,7 +129,24 @@ class SmsTransactionProcessor @Inject constructor(
                 transactionHash = hash,
                 currency = parsedTxn.currency
             )
-            
+
+            // ── Time-window duplicate guard ──────────────────────────────
+            // Same amount + same bank within ±5 minutes = duplicate
+            val txnMillis = transactionDateTime
+                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val windowStart = txnMillis - 5 * 60 * 1000L
+            val windowEnd   = txnMillis + 5 * 60 * 1000L
+            val dupCount = transactionRepository.countDuplicatesInWindow(
+                amount    = parsedTxn.amount,
+                bankName  = parsedTxn.bankName ?: "",
+                startTime = windowStart,
+                endTime   = windowEnd
+            )
+            if (dupCount > 0) {
+                Log.d(TAG, "⚠️ Duplicate suppressed: ${parsedTxn.merchantName} ${parsedTxn.amount} within 5-min window")
+                return false
+            }
+
             transactionRepository.insertTransaction(entity)
             Log.d(TAG, "💾 Saved transaction to database, date: $transactionDateTime, smsId: $smsId")
             return true

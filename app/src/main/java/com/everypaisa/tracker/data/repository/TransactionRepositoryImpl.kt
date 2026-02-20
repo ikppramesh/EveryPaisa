@@ -122,4 +122,13 @@ class TransactionRepositoryImpl @Inject constructor(
     ): List<TransactionEntity> {
         return transactionDao.getTransactionsByAmountRange(minAmount, maxAmount, afterDate)
     }
+
+    override suspend fun countDuplicatesInWindow(
+        amount: java.math.BigDecimal,
+        bankName: String,
+        startTime: Long,
+        endTime: Long
+    ): Int {
+        return transactionDao.countDuplicatesByAmountAndTime(amount, bankName, startTime, endTime)
+    }
 }

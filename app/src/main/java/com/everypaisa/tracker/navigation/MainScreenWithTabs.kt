@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -215,9 +216,12 @@ fun MainScreenWithTabs(
                 )
 
                 // ── Scrollable country tabs ─────────────────────────────────
+                val screenWidthDp = LocalConfiguration.current.screenWidthDp
+                // On narrow phones (< 380dp) show only flag emoji; wider screens show flag + name
+                val showTabLabel = screenWidthDp >= 380
                 ScrollableTabRow(
                     selectedTabIndex = selectedTab,
-                    edgePadding = 4.dp,
+                    edgePadding = if (showTabLabel) 4.dp else 0.dp,
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.primary,
                     divider = {}
@@ -226,24 +230,32 @@ fun MainScreenWithTabs(
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            modifier = Modifier.height(56.dp)
+                            modifier = Modifier.height(if (showTabLabel) 56.dp else 44.dp)
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            ) {
+                            if (showTabLabel) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Text(
+                                        tab.flag,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        tab.name,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (selectedTab == index)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            } else {
                                 Text(
                                     tab.flag,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    tab.name,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (selectedTab == index)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier.padding(horizontal = 6.dp)
                                 )
                             }
                         }

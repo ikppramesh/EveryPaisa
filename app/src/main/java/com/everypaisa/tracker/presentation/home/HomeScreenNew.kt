@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -208,6 +209,9 @@ fun HomeScreenNew(
             
             is HomeUiState.Success -> {
                 val currentPeriod by viewModel.selectedPeriod.collectAsState()
+                val availableBanks by viewModel.availableBanks.collectAsState()
+                val selectedBank by viewModel.selectedBank.collectAsState()
+                val filteredTxns by viewModel.filteredTransactions.collectAsState()
 
                 if (state.transactions.isEmpty() && currentPeriod.type == DashboardPeriod.MONTHLY && currentPeriod == Period.currentMonth()) {
                     EmptyState(
@@ -257,6 +261,17 @@ fun HomeScreenNew(
                             )
                         }
 
+                        // Bank Filter Chips
+                        if (availableBanks.size > 1) {
+                            item {
+                                BankFilterChips(
+                                    banks = availableBanks,
+                                    selectedBank = selectedBank,
+                                    onBankSelected = { viewModel.setSelectedBank(it) }
+                                )
+                            }
+                        }
+
                         if (state.transactions.isEmpty()) {
                             item {
                                 Card(
@@ -294,8 +309,12 @@ fun HomeScreenNew(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    val label = if (selectedBank != null)
+                                        "$selectedBank (${filteredTxns.size})"
+                                    else
+                                        "Transactions (${state.transactions.size})"
                                     Text(
-                                        "Transactions (${state.transactions.size})",
+                                        label,
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -309,9 +328,9 @@ fun HomeScreenNew(
                                     }
                                 }
                             }
-                            
-                            // Transaction List
-                            items(state.transactions) { transaction ->
+
+                            // Transaction List (filtered by selected bank)
+                            items(filteredTxns) { transaction ->
                                 EnhancedTransactionCard(
                                     merchantName = transaction.merchantName,
                                     amount = transaction.amount,
@@ -333,6 +352,33 @@ fun HomeScreenNew(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun BankFilterChips(
+    banks: List<String>,
+    selectedBank: String?,
+    onBankSelected: (String?) -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 4.dp)
+    ) {
+        item {
+            FilterChip(
+                selected = selectedBank == null,
+                onClick = { onBankSelected(null) },
+                label = { Text("All Banks") }
+            )
+        }
+        items(banks) { bank ->
+            FilterChip(
+                selected = selectedBank == bank,
+                onClick = { onBankSelected(if (selectedBank == bank) null else bank) },
+                label = { Text(bank) }
+            )
         }
     }
 }

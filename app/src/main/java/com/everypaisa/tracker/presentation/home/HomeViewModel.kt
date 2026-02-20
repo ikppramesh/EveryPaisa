@@ -25,11 +25,22 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     
     private val TAG = "HomeViewModel"
-    
+
     // Current selected period (drives the dashboard)
     private val _selectedPeriod = MutableStateFlow(Period.currentMonth())
     val selectedPeriod: StateFlow<Period> = _selectedPeriod.asStateFlow()
-    
+
+    // Bank filter — null = show all, non-null = show only that bank
+    private val _selectedBank = MutableStateFlow<String?>(null)
+    val selectedBank: StateFlow<String?> = _selectedBank.asStateFlow()
+
+    fun setSelectedBank(bank: String?) {
+        _selectedBank.value = bank
+    }
+
+    // Raw INR transactions (unfiltered by bank)
+    private val _rawTransactions = MutableStateFlow<List<TransactionEntity>>(emptyList())
+
     // UI State reacts to period changes automatically
     val uiState: StateFlow<HomeUiState> = _selectedPeriod.flatMapLatest { period ->
         Log.d(TAG, "📅 Period changed: ${period.format()} (${period.type})")
@@ -41,14 +52,20 @@ class HomeViewModel @Inject constructor(
             val inrTransactions = allTransactions.filter { txn ->
                 txn.currency.uppercase() == "INR"
             }
-            
-            Log.d(TAG, "🇮🇳 Indian Transactions: ${inrTransactions.size}/${allTransactions.size}")
-            
-            // Calculate multi-currency summary (only INR for Indian screen)
-            val multiCurrencySummary = calculateMultiCurrencySummary(inrTransactions)
-            
+            // Deduplicate: keep only one per (amount, bankName, dateTime-minute)
+            val deduplicated = inrTransactions
+                .groupBy { Triple(it.amount, it.bankName, it.dateTime.withSecond(0).withNano(0)) }
+                .map { (_, group) -> group.first() }
+                .sortedByDescending { it.dateTime }
+
+            Log.d(TAG, "🇮🇳 Indian Transactions: ${deduplicated.size}/${allTransactions.size}")
+
+            _rawTransactions.value = deduplicated
+
+            val multiCurrencySummary = calculateMultiCurrencySummary(deduplicated)
+
             HomeUiState.Success(
-                transactions = inrTransactions,
+                transactions = deduplicated,
                 monthSummary = summary,
                 currentPeriod = period,
                 multiCurrencySummary = multiCurrencySummary
@@ -62,7 +79,18 @@ class HomeViewModel @Inject constructor(
         SharingStarted.Eagerly,
         HomeUiState.Loading
     )
-    
+
+    /** Distinct bank names for the filter chip row */
+    val availableBanks: StateFlow<List<String>> = _rawTransactions
+        .map { txns -> txns.mapNotNull { it.bankName }.filter { it.isNotBlank() }.distinct().sorted() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Transactions after applying the selected bank filter */
+    val filteredTransactions: StateFlow<List<TransactionEntity>> =
+        combine(_rawTransactions, _selectedBank) { txns, bank ->
+            if (bank == null) txns else txns.filter { it.bankName == bank }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     private fun calculateMultiCurrencySummary(transactions: List<TransactionEntity>): MultiCurrencySummary {
         // Group transactions by currency
         val byCurrency = transactions.groupBy { it.currency }
