@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -135,7 +137,7 @@ fun AnalyticsScreen(
                 // Section header
                 item {
                     Text(
-                        text = "Top Expenses (Highest → Lowest)",
+                        text = "Transactions (Newest First)",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
@@ -154,7 +156,7 @@ fun AnalyticsScreen(
                 if (uiState.selectedBarTransactions.isEmpty()) {
                     item {
                         Text(
-                            "No expenses in this period",
+                            "No transactions in this period",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -164,6 +166,7 @@ fun AnalyticsScreen(
                         TransactionRankItem(rank = index + 1, transaction = txn)
                     }
                 }
+
             }
 
             // Bottom padding
@@ -483,7 +486,21 @@ private fun TransactionRankItem(
 ) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
     val isExpense = transaction.transactionType == TransactionType.EXPENSE
+    val isIncome = transaction.transactionType == TransactionType.INCOME ||
+            transaction.transactionType == TransactionType.CREDIT
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")
+    var showSmsDialog by remember { mutableStateOf(false) }
+
+    val amountColor = when {
+        isExpense -> Color(0xFFEF5350)
+        isIncome -> Color(0xFF66BB6A)
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val typeLabel = when {
+        isExpense -> "Spent"
+        isIncome -> "Received"
+        else -> transaction.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -562,18 +579,137 @@ private fun TransactionRankItem(
             }
 
             Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // SMS icon
+                    if (!transaction.smsBody.isNullOrBlank()) {
+                        IconButton(
+                            onClick = { showSmsDialog = true },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Message,
+                                contentDescription = "View SMS",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = "${if (isExpense) "-" else if (isIncome) "+" else ""}${formatter.format(transaction.amount)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = amountColor
+                    )
+                }
                 Text(
-                    text = formatter.format(transaction.amount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isExpense) Color(0xFFEF5350) else Color(0xFF66BB6A)
-                )
-                Text(
-                    text = if (isExpense) "Spent" else "Received",
+                    text = typeLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isExpense) Color(0xFFEF5350).copy(alpha = 0.7f) else Color(0xFF66BB6A).copy(alpha = 0.7f)
+                    color = amountColor.copy(alpha = 0.7f)
                 )
             }
         }
+    }
+
+    // SMS popup
+    if (showSmsDialog && !transaction.smsBody.isNullOrBlank()) {
+        AlertDialog(
+            onDismissRequest = { showSmsDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Message,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("SMS Details", style = MaterialTheme.typography.titleLarge)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                transaction.merchantName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "${if (isExpense) "-" else "+"}${formatter.format(transaction.amount)}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = amountColor
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                transaction.dateTime.format(dateFormatter),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (!transaction.smsSender.isNullOrBlank()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    "From",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    transaction.smsSender!!,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    Column {
+                        Text(
+                            "Message",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                transaction.smsBody!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(12.dp),
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSmsDialog = false }) { Text("Close") }
+            }
+        )
     }
 }

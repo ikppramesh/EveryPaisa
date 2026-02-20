@@ -3,14 +3,21 @@ package com.everypaisa.tracker.presentation.transactions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.everypaisa.tracker.data.entity.TransactionType
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -152,7 +159,10 @@ fun TransactionsScreen(
                                     dateTime = transaction.dateTime.format(
                                         DateTimeFormatter.ofPattern("MMM dd, hh:mm a")
                                     ),
-                                    isExpense = transaction.transactionType.name == "EXPENSE",
+                                    transactionType = transaction.transactionType,
+                                    bankName = transaction.bankName,
+                                    smsBody = transaction.smsBody,
+                                    smsSender = transaction.smsSender,
                                     onClick = { onTransactionClick(transaction.id) }
                                 )
                             }
@@ -170,9 +180,21 @@ fun TransactionItem(
     amount: java.math.BigDecimal,
     category: String,
     dateTime: String,
-    isExpense: Boolean,
+    transactionType: TransactionType,
+    bankName: String? = null,
+    smsBody: String? = null,
+    smsSender: String? = null,
     onClick: () -> Unit
 ) {
+    val isExpense = transactionType == TransactionType.EXPENSE
+    val isIncome = transactionType == TransactionType.INCOME || transactionType == TransactionType.CREDIT
+    val amountColor = when {
+        isExpense -> MaterialTheme.colorScheme.error
+        isIncome -> Color(0xFF2E7D32)
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    var showSmsDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick
@@ -185,24 +207,141 @@ fun TransactionItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Text(merchantName, style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    merchantName,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    "$category • $dateTime",
+                    buildString {
+                        append(category)
+                        if (!bankName.isNullOrBlank()) append(" • $bankName")
+                        append(" • $dateTime")
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                "${if (isExpense) "-" else "+"}₹${amount.toPlainString()}",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isExpense)
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.primary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // SMS icon
+                if (!smsBody.isNullOrBlank()) {
+                    IconButton(
+                        onClick = { showSmsDialog = true },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Message,
+                            contentDescription = "View SMS",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                Text(
+                    "${if (isExpense) "-" else if (isIncome) "+" else ""}₹${amount.toPlainString()}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = amountColor
+                )
+            }
         }
+    }
+
+    // SMS popup dialog
+    if (showSmsDialog && !smsBody.isNullOrBlank()) {
+        AlertDialog(
+            onDismissRequest = { showSmsDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Message,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("SMS Details", style = MaterialTheme.typography.titleLarge)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                merchantName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "${if (isExpense) "-" else "+"}₹${amount.toPlainString()}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = amountColor
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                dateTime,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (!smsSender.isNullOrBlank()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    "From",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    smsSender,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    Column {
+                        Text(
+                            "Message",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                smsBody,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(12.dp),
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSmsDialog = false }) { Text("Close") }
+            }
+        )
     }
 }

@@ -78,7 +78,7 @@ class AnalyticsViewModel @Inject constructor(
         _uiState.update { it.copy(selectedBarIndex = index) }
 
         viewModelScope.launch {
-            transactionDao.getTransactionsForPeriodByAmount(bar.startMillis, bar.endMillis)
+            transactionDao.getTransactionsForPeriod(bar.startMillis, bar.endMillis)
                 .collect { transactions ->
                     val sorted = sortTransactions(transactions, _uiState.value.sortBy)
                     _uiState.update { it.copy(selectedBarTransactions = sorted) }
