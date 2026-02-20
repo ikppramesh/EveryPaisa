@@ -123,17 +123,20 @@ class HomeViewModel @Inject constructor(
     }
     
     fun selectPeriodType(type: DashboardPeriod) {
+        _selectedBank.value = null   // reset bank filter on period change
         _selectedPeriod.value = Period.forType(type)
         Log.d(TAG, "🔄 Switched to: ${type.label}")
     }
-    
+
     fun goToPreviousPeriod() {
+        _selectedBank.value = null   // reset bank filter on period change
         _selectedPeriod.value = _selectedPeriod.value.previous()
     }
-    
+
     fun goToNextPeriod() {
         val next = _selectedPeriod.value.next()
         if (!next.isFuture() || next.startDate <= java.time.LocalDate.now()) {
+            _selectedBank.value = null   // reset bank filter on period change
             _selectedPeriod.value = next
         }
     }

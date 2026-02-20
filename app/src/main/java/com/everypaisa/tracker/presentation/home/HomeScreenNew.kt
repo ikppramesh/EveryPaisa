@@ -262,7 +262,7 @@ fun HomeScreenNew(
                         }
 
                         // Bank Filter Chips
-                        if (availableBanks.size > 1) {
+                        if (availableBanks.isNotEmpty()) {
                             item {
                                 BankFilterChips(
                                     banks = availableBanks,
