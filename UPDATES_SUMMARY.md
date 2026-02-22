@@ -1,12 +1,17 @@
 # 🌍 EveryPaisa Multi-Currency Update - Complete Summary
 
 **Date:** February 22, 2026  
-**Version:** 2.0  
+**Version:** 2.2.1  
 **Contact:** every.paisa.app@gmail.com
 
 ---
 
 ## 📋 What Was Updated
+### 🏧 ATM Marking & Filtering (v2.2.1)
+- Mark any transaction as ATM withdrawal
+- ATM filter chip shows only ATM-marked transactions
+- Summary tiles (Net Balance, Expenses, Income, Total Spent) update to show ATM totals when filter is active
+- Works for all countries and currencies
 
 ### ✅ Documentation Updates
 

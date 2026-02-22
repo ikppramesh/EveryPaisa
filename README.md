@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Language-Kotlin-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License">
   <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg" alt="Privacy">
-  <img src="https://img.shields.io/badge/Version-2.1.1-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.2.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Currencies-30%2B-gold.svg" alt="Currencies">
 </p>
 
@@ -29,6 +29,12 @@
 **EveryPaisa** is a privacy-first, multi-currency Android expense tracker that automatically reads bank SMS messages and transforms them into a clean, searchable money timeline. Built with **100% on-device processing** — no cloud, no servers, no data ever leaves your phone. Works on all Android devices from API 26+ (Android 8.0 Oreo).
 
 ### ✨ Key Features
+
+#### 🏧 ATM Marking & Filtering (v2.2.1)
+- Mark any transaction as ATM withdrawal
+- ATM filter chip shows only ATM-marked transactions
+- Summary tiles (Net Balance, Expenses, Income, Total Spent) update to show ATM totals when filter is active
+- Works for all countries and currencies
 
 - 🔒 **100% Privacy-First** — All processing happens on your device, zero internet required
 - 🤖 **Automatic SMS Parsing** — Supports 40+ Indian & International banks
