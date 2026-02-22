@@ -105,6 +105,17 @@ class HomeViewModel @Inject constructor(
             if (bank == null) txns else txns.filter { it.bankName == bank }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** Summary calculated from filtered transactions (respects bank filter) */
+    val filteredSummary: StateFlow<MultiCurrencySummary> = combine(
+        filteredTransactions, _selectedCountry
+    ) { txns, country ->
+        if (txns.isEmpty()) {
+            MultiCurrencySummary(null, emptyList())
+        } else {
+            calculateMultiCurrencySummary(txns, country)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, MultiCurrencySummary(null, emptyList()))
+
     /** Available countries */
     val availableCountries: StateFlow<List<Country>> = MutableStateFlow(Country.values().toList())
         .stateIn(viewModelScope, SharingStarted.Eagerly, Country.values().toList())

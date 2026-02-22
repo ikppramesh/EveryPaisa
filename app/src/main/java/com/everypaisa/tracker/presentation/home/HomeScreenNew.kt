@@ -212,6 +212,7 @@ fun HomeScreenNew(
                 val availableBanks by viewModel.availableBanks.collectAsState()
                 val selectedBank by viewModel.selectedBank.collectAsState()
                 val filteredTxns by viewModel.filteredTransactions.collectAsState()
+                val filteredSummary by viewModel.filteredSummary.collectAsState()
 
                 if (state.transactions.isEmpty() && currentPeriod.type == DashboardPeriod.MONTHLY && currentPeriod == Period.currentMonth()) {
                     EmptyState(
@@ -247,7 +248,7 @@ fun HomeScreenNew(
                         // Hero Summary Card - Multi-Currency
                         item {
                             MultiCurrencySummaryCard(
-                                multiCurrencySummary = state.multiCurrencySummary,
+                                multiCurrencySummary = filteredSummary,
                                 period = state.currentPeriod.format(),
                                 periodType = state.currentPeriod.type
                             )
