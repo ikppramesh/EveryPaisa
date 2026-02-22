@@ -47,16 +47,22 @@ class RegionalHomeViewModel @Inject constructor(
     private val _showAtmOnly = MutableStateFlow(false)
     val showAtmOnly: StateFlow<Boolean> = _showAtmOnly.asStateFlow()
 
-    /** Transactions after applying the selected bank + ATM filter */
+    /** Bank-filtered transactions for summary cards (ATM view filter does NOT affect totals) */
+    private val _bankFilteredTransactions: StateFlow<List<TransactionEntity>> =
+        combine(_rawTransactions, _selectedBank) { txns, bank ->
+            if (bank == null) txns else txns.filter { it.bankName == bank }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Transactions after applying bank + ATM-only filters (for transaction list display only) */
     val filteredTransactions: StateFlow<List<TransactionEntity>> =
         combine(_rawTransactions, _selectedBank, _showAtmOnly) { txns, bank, atmOnly ->
             val bankFiltered = if (bank == null) txns else txns.filter { it.bankName == bank }
             if (atmOnly) bankFiltered.filter { it.isAtmWithdrawal } else bankFiltered
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** Summary calculated from filtered transactions (respects bank filter) */
+    /** Summary calculated from bank-filtered transactions only — ATM view filter never zeroes out totals */
     val filteredSummary: StateFlow<MultiCurrencySummary> = combine(
-        filteredTransactions, _currencies
+        _bankFilteredTransactions, _currencies
     ) { txns, currencies ->
         if (currencies.isEmpty() || txns.isEmpty()) {
             MultiCurrencySummary(null, emptyList())
