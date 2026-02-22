@@ -21,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.everypaisa.tracker.domain.model.Country
 import com.everypaisa.tracker.worker.OptimizedSmsReaderWorker
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -33,10 +34,13 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val selectedCountry by viewModel.selectedCountry.collectAsState()
+    val availableCountries by viewModel.availableCountries.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var isScanning by remember { mutableStateOf(false) }
+    var showCountrySelector by remember { mutableStateOf(false) }
     
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -119,7 +123,23 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("EveryPaisa") },
+                title = { 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("EveryPaisa")
+                        Spacer(modifier = Modifier.weight(1f))
+                        // Country selector in top bar
+                        Button(
+                            onClick = { showCountrySelector = true },
+                            modifier = Modifier.heightIn(max = 40.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text("${selectedCountry.flag} ${selectedCountry.code}", fontSize = MaterialTheme.typography.labelSmall.fontSize)
+                        }
+                    }
+                },
                 actions = {
                     if (isScanning) {
                         CircularProgressIndicator(
@@ -149,6 +169,36 @@ fun HomeScreen(
             )
         }
     ) { paddingValues ->
+        // Country selector dropdown
+        if (showCountrySelector) {
+            AlertDialog(
+                onDismissRequest = { showCountrySelector = false },
+                title = { Text("Select Country") },
+                text = {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(availableCountries) { country ->
+                            TextButton(
+                                onClick = {
+                                    viewModel.setSelectedCountry(country)
+                                    showCountrySelector = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${country.flag} ${country.label} (${country.code})")
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showCountrySelector = false }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
+        
         when (val state = uiState) {
             is HomeUiState.Loading -> {
                 Box(
@@ -189,7 +239,7 @@ fun HomeScreen(
                             modifier = Modifier.padding(32.dp)
                         ) {
                             Text(
-                                text = "No transactions yet",
+                                text = "No transactions for ${state.selectedCountry.label}",
                                 style = MaterialTheme.typography.headlineSmall,
                                 textAlign = TextAlign.Center
                             )
@@ -215,7 +265,8 @@ fun HomeScreen(
                             MonthSummaryCard(
                                 income = state.monthSummary.totalIncome,
                                 expense = state.monthSummary.totalExpenses,
-                                count = state.monthSummary.transactionCount
+                                count = state.monthSummary.transactionCount,
+                                currency = state.selectedCountry.primaryCurrency
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -223,7 +274,7 @@ fun HomeScreen(
                         // Recent Transactions
                         item {
                             Text(
-                                "Recent Transactions",
+                                "Recent Transactions (${state.selectedCountry.label})",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
@@ -234,6 +285,7 @@ fun HomeScreen(
                                 merchantName = transaction.merchantName,
                                 amount = transaction.amount,
                                 category = transaction.category,
+                                currency = transaction.currency,
                                 dateTime = transaction.dateTime.format(
                                     DateTimeFormatter.ofPattern("MMM dd, hh:mm a")
                                 ),
@@ -248,7 +300,8 @@ fun HomeScreen(
 }
 
 @Composable
-fun MonthSummaryCard(income: BigDecimal, expense: BigDecimal, count: Int) {
+fun MonthSummaryCard(income: BigDecimal, expense: BigDecimal, count: Int, currency: String = "INR") {
+    val currencySymbol = com.everypaisa.tracker.domain.model.CurrencySummary.getCurrencySymbol(currency)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -275,7 +328,7 @@ fun MonthSummaryCard(income: BigDecimal, expense: BigDecimal, count: Int) {
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
                     Text(
-                        "₹${income.toPlainString()}",
+                        "$currencySymbol${income.toPlainString()}",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -287,7 +340,7 @@ fun MonthSummaryCard(income: BigDecimal, expense: BigDecimal, count: Int) {
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
                     Text(
-                        "₹${expense.toPlainString()}",
+                        "$currencySymbol${expense.toPlainString()}",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -308,9 +361,11 @@ fun TransactionCard(
     merchantName: String,
     amount: BigDecimal,
     category: String,
+    currency: String = "INR",
     dateTime: String,
     isExpense: Boolean
 ) {
+    val currencySymbol = com.everypaisa.tracker.domain.model.CurrencySummary.getCurrencySymbol(currency)
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -333,7 +388,7 @@ fun TransactionCard(
                 )
             }
             Text(
-                "${if (isExpense) "-" else "+"}₹${amount.toPlainString()}",
+                "${if (isExpense) "-" else "+"}$currencySymbol${amount.toPlainString()}",
                 style = MaterialTheme.typography.titleMedium,
                 color = if (isExpense) 
                     MaterialTheme.colorScheme.error 

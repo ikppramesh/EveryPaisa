@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.everypaisa.tracker.data.entity.TransactionType
+import com.everypaisa.tracker.domain.model.Country
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,11 +31,33 @@ fun TransactionsScreen(
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showCountrySelector by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Transactions") },
+                title = { 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Transactions")
+                        Spacer(modifier = Modifier.weight(1f))
+                        // Country selector in top bar
+                        when (val state = uiState) {
+                            is TransactionsUiState.Success -> {
+                                Button(
+                                    onClick = { showCountrySelector = true },
+                                    modifier = Modifier.heightIn(max = 40.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text("${state.selectedCountry.flag}", fontSize = MaterialTheme.typography.labelSmall.fontSize)
+                                }
+                            }
+                            else -> {}
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
@@ -48,6 +71,37 @@ fun TransactionsScreen(
             )
         }
     ) { paddingValues ->
+        // Country selector dialog
+        if (showCountrySelector && uiState is TransactionsUiState.Success) {
+            val state = uiState as TransactionsUiState.Success
+            AlertDialog(
+                onDismissRequest = { showCountrySelector = false },
+                title = { Text("Select Country") },
+                text = {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(Country.values().toList()) { country ->
+                            TextButton(
+                                onClick = {
+                                    viewModel.setSelectedCountry(country)
+                                    showCountrySelector = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${country.flag} ${country.label} (${country.code})")
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showCountrySelector = false }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
+        
         when (val state = uiState) {
             is TransactionsUiState.Loading -> {
                 Box(
