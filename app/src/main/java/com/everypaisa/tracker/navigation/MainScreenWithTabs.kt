@@ -6,8 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
@@ -103,8 +101,7 @@ private val countryTabs = listOf(
 @Composable
 fun MainScreenWithTabs(
     onNavigateToSettings: () -> Unit,
-    onNavigateToTransactions: () -> Unit,
-    onNavigateToAnalytics: () -> Unit
+    onNavigateToTransactions: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val current = countryTabs[selectedTab]
@@ -204,9 +201,6 @@ fun MainScreenWithTabs(
                                 Icon(Icons.Default.Sync, contentDescription = "Scan SMS")
                             }
                         }
-                        IconButton(onClick = onNavigateToAnalytics) {
-                            Icon(Icons.Default.BarChart, contentDescription = "Analytics")
-                        }
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
@@ -277,8 +271,7 @@ fun MainScreenWithTabs(
                 0 -> HomeScreenNew(
                     showTopBar = false,
                     onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToTransactions = onNavigateToTransactions,
-                    onNavigateToAnalytics = onNavigateToAnalytics
+                    onNavigateToTransactions = onNavigateToTransactions
                 )
                 // Every other country — uses the generic RegionalHomeScreen
                 else -> RegionalHomeScreen(

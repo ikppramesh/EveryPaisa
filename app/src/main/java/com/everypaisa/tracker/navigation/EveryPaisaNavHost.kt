@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.everypaisa.tracker.presentation.analytics.AnalyticsScreen
 import com.everypaisa.tracker.presentation.home.HomeScreenNew
 import com.everypaisa.tracker.presentation.uae.UAEHomeScreen
 import com.everypaisa.tracker.presentation.permission.PermissionScreen
@@ -43,16 +42,7 @@ fun EveryPaisaNavHost() {
                 },
                 onNavigateToTransactions = {
                     navController.navigate("transactions")
-                },
-                onNavigateToAnalytics = {
-                    navController.navigate("analytics")
                 }
-            )
-        }
-        
-        composable("analytics") {
-            AnalyticsScreen(
-                onNavigateBack = { navController.navigateUp() }
             )
         }
         

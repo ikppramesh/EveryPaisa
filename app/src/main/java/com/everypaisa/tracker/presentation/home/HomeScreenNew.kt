@@ -52,7 +52,6 @@ import java.time.format.DateTimeFormatter
 fun HomeScreenNew(
     onNavigateToSettings: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    onNavigateToAnalytics: () -> Unit = {},
     showTopBar: Boolean = true,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -129,9 +128,6 @@ fun HomeScreenNew(
                         }
                     }) {
                         Icon(Icons.Default.Refresh, "Refresh")
-                    }
-                    IconButton(onClick = onNavigateToAnalytics) {
-                        Icon(Icons.Default.BarChart, "Dashboard")
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, "Settings")

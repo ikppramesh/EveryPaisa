@@ -18,7 +18,6 @@ import java.time.format.DateTimeFormatter
 fun UAEHomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    onNavigateToAnalytics: () -> Unit = {},
     viewModel: UAEHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -39,9 +38,6 @@ fun UAEHomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToAnalytics) {
-                        Icon(Icons.Default.Analytics, "Analytics")
-                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, "Settings")
                     }
