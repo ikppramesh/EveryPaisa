@@ -92,10 +92,13 @@ fun RegionalHomeScreen(
                 // Bank Filter Chips
                 if (availableBanks.isNotEmpty()) {
                     item {
+                        val showAtmOnly by viewModel.showAtmOnly.collectAsState()
                         BankFilterChips(
                             banks = availableBanks,
                             selectedBank = selectedBank,
-                            onBankSelected = { viewModel.setSelectedBank(it) }
+                            showAtmOnly = showAtmOnly,
+                            onBankSelected = { viewModel.setSelectedBank(it) },
+                            onAtmFilterToggled = { viewModel.setShowAtmOnly(it) }
                         )
                     }
                 }
@@ -136,6 +139,7 @@ fun RegionalHomeScreen(
                 if (filteredTxns.isNotEmpty()) {
                     items(filteredTxns, key = { it.id }) { transaction ->
                         EnhancedTransactionCard(
+                            transactionId = transaction.id,
                             merchantName = transaction.merchantName,
                             amount = transaction.amount,
                             category = transaction.category,
@@ -149,7 +153,11 @@ fun RegionalHomeScreen(
                             currency = transaction.currency,
                             smsId = transaction.smsId,
                             smsBody = transaction.smsBody,
-                            smsSender = transaction.smsSender
+                            smsSender = transaction.smsSender,
+                            isAtmWithdrawal = transaction.isAtmWithdrawal,
+                            isInterAccountTransfer = transaction.isInterAccountTransfer,
+                            onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
+                            onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
                         )
                     }
                 } else {

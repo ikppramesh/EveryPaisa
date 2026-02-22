@@ -44,10 +44,14 @@ class RegionalHomeViewModel @Inject constructor(
         .map { txns -> txns.mapNotNull { it.bankName }.filter { it.isNotBlank() }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** Transactions after applying the selected bank filter */
+    private val _showAtmOnly = MutableStateFlow(false)
+    val showAtmOnly: StateFlow<Boolean> = _showAtmOnly.asStateFlow()
+
+    /** Transactions after applying the selected bank + ATM filter */
     val filteredTransactions: StateFlow<List<TransactionEntity>> =
-        combine(_rawTransactions, _selectedBank) { txns, bank ->
-            if (bank == null) txns else txns.filter { it.bankName == bank }
+        combine(_rawTransactions, _selectedBank, _showAtmOnly) { txns, bank, atmOnly ->
+            val bankFiltered = if (bank == null) txns else txns.filter { it.bankName == bank }
+            if (atmOnly) bankFiltered.filter { it.isAtmWithdrawal } else bankFiltered
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Summary calculated from filtered transactions (respects bank filter) */
@@ -125,22 +129,31 @@ class RegionalHomeViewModel @Inject constructor(
     }
 
     fun goToPreviousPeriod() {
-        _selectedBank.value = null  // reset bank filter on period change
+        _selectedBank.value = null
+        _showAtmOnly.value = false
         _selectedPeriod.value = _selectedPeriod.value.previous()
     }
 
     fun goToNextPeriod() {
-        _selectedBank.value = null  // reset bank filter on period change
+        _selectedBank.value = null
+        _showAtmOnly.value = false
         _selectedPeriod.value = _selectedPeriod.value.next()
     }
 
     fun selectPeriodType(type: DashboardPeriod) {
-        _selectedBank.value = null  // reset bank filter on period change
+        _selectedBank.value = null
+        _showAtmOnly.value = false
         _selectedPeriod.value = Period.forType(type)
     }
 
     fun setSelectedBank(bank: String?) {
+        _showAtmOnly.value = false  // clear ATM filter when bank selected
         _selectedBank.value = bank
+    }
+
+    fun setShowAtmOnly(enabled: Boolean) {
+        _selectedBank.value = null  // clear bank filter when ATM filter activated
+        _showAtmOnly.value = enabled
     }
 
     fun markTransactionAsAtm(id: Long, flag: Boolean) {

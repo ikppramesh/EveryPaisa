@@ -109,6 +109,7 @@ fun UAEHomeScreen(
                     // Transaction List
                     items(state.transactions) { transaction ->
                         EnhancedTransactionCard(
+                            transactionId = transaction.id,
                             merchantName = transaction.merchantName,
                             amount = transaction.amount,
                             category = transaction.category,
@@ -122,7 +123,11 @@ fun UAEHomeScreen(
                             currency = transaction.currency,
                             smsId = transaction.smsId,
                             smsBody = transaction.smsBody,
-                            smsSender = transaction.smsSender
+                            smsSender = transaction.smsSender,
+                            isAtmWithdrawal = transaction.isAtmWithdrawal,
+                            isInterAccountTransfer = transaction.isInterAccountTransfer,
+                            onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
+                            onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
                         )
                     }
                     

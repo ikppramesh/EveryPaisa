@@ -39,13 +39,24 @@ class HomeViewModel @Inject constructor(
     private val _selectedBank = MutableStateFlow<String?>(null)
     val selectedBank: StateFlow<String?> = _selectedBank.asStateFlow()
 
+    // ATM-only filter
+    private val _showAtmOnly = MutableStateFlow(false)
+    val showAtmOnly: StateFlow<Boolean> = _showAtmOnly.asStateFlow()
+
     fun setSelectedCountry(country: Country) {
         _selectedCountry.value = country
-        _selectedBank.value = null  // reset bank filter when country changes
+        _selectedBank.value = null
+        _showAtmOnly.value = false
     }
 
     fun setSelectedBank(bank: String?) {
         _selectedBank.value = bank
+        _showAtmOnly.value = false  // clear ATM filter when switching bank
+    }
+
+    fun setShowAtmOnly(enabled: Boolean) {
+        _showAtmOnly.value = enabled
+        if (enabled) _selectedBank.value = null  // clear bank filter when ATM filter is on
     }
 
     // Raw transactions (unfiltered by bank, but filtered by country)
@@ -99,10 +110,11 @@ class HomeViewModel @Inject constructor(
         .map { txns -> txns.mapNotNull { it.bankName }.filter { it.isNotBlank() }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** Transactions after applying the selected bank filter */
+    /** Transactions after applying bank + ATM-only filters */
     val filteredTransactions: StateFlow<List<TransactionEntity>> =
-        combine(_rawTransactions, _selectedBank) { txns, bank ->
-            if (bank == null) txns else txns.filter { it.bankName == bank }
+        combine(_rawTransactions, _selectedBank, _showAtmOnly) { txns, bank, atmOnly ->
+            val bankFiltered = if (bank == null) txns else txns.filter { it.bankName == bank }
+            if (atmOnly) bankFiltered.filter { it.isAtmWithdrawal } else bankFiltered
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Summary calculated from filtered transactions (respects bank filter) */
@@ -154,20 +166,23 @@ class HomeViewModel @Inject constructor(
     }
     
     fun selectPeriodType(type: DashboardPeriod) {
-        _selectedBank.value = null   // reset bank filter on period change
+        _selectedBank.value = null
+        _showAtmOnly.value = false
         _selectedPeriod.value = Period.forType(type)
         Log.d(TAG, "🔄 Switched to: ${type.label}")
     }
 
     fun goToPreviousPeriod() {
-        _selectedBank.value = null   // reset bank filter on period change
+        _selectedBank.value = null
+        _showAtmOnly.value = false
         _selectedPeriod.value = _selectedPeriod.value.previous()
     }
 
     fun goToNextPeriod() {
         val next = _selectedPeriod.value.next()
         if (!next.isFuture() || next.startDate <= java.time.LocalDate.now()) {
-            _selectedBank.value = null   // reset bank filter on period change
+            _selectedBank.value = null
+            _showAtmOnly.value = false
             _selectedPeriod.value = next
         }
     }

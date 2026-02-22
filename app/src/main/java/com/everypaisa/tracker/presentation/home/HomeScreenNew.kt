@@ -211,6 +211,7 @@ fun HomeScreenNew(
                 val currentPeriod by viewModel.selectedPeriod.collectAsState()
                 val availableBanks by viewModel.availableBanks.collectAsState()
                 val selectedBank by viewModel.selectedBank.collectAsState()
+                val showAtmOnly by viewModel.showAtmOnly.collectAsState()
                 val filteredTxns by viewModel.filteredTransactions.collectAsState()
                 val filteredSummary by viewModel.filteredSummary.collectAsState()
 
@@ -264,13 +265,15 @@ fun HomeScreenNew(
                             )
                         }
 
-                        // Bank Filter Chips
+                        // Bank + ATM Filter Chips
                         if (availableBanks.isNotEmpty()) {
                             item {
                                 BankFilterChips(
                                     banks = availableBanks,
                                     selectedBank = selectedBank,
-                                    onBankSelected = { viewModel.setSelectedBank(it) }
+                                    showAtmOnly = showAtmOnly,
+                                    onBankSelected = { viewModel.setSelectedBank(it) },
+                                    onAtmFilterToggled = { viewModel.setShowAtmOnly(it) }
                                 )
                             }
                         }
@@ -368,7 +371,9 @@ fun HomeScreenNew(
 fun BankFilterChips(
     banks: List<String>,
     selectedBank: String?,
-    onBankSelected: (String?) -> Unit
+    showAtmOnly: Boolean,
+    onBankSelected: (String?) -> Unit,
+    onAtmFilterToggled: (Boolean) -> Unit
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -376,9 +381,32 @@ fun BankFilterChips(
     ) {
         item {
             FilterChip(
-                selected = selectedBank == null,
-                onClick = { onBankSelected(null) },
+                selected = selectedBank == null && !showAtmOnly,
+                onClick = {
+                    onBankSelected(null)
+                    onAtmFilterToggled(false)
+                },
                 label = { Text("All Banks") }
+            )
+        }
+        // ATM Withdrawals quick-filter
+        item {
+            FilterChip(
+                selected = showAtmOnly,
+                onClick = { onAtmFilterToggled(!showAtmOnly) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.LocalAtm,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                },
+                label = { Text("ATM") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onTertiaryContainer
+                )
             )
         }
         items(banks) { bank ->
