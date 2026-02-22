@@ -88,7 +88,7 @@ fun RegionalHomeScreen(
                         periodType = state.currentPeriod.type
                     )
                 }
-
+                
                 // Bank Filter Chips
                 if (availableBanks.isNotEmpty()) {
                     item {
@@ -98,6 +98,16 @@ fun RegionalHomeScreen(
                             onBankSelected = { viewModel.setSelectedBank(it) }
                         )
                     }
+                }
+                
+                // Quick Stats Row (using filtered summary)
+                item {
+                    val totalExpenses = filteredSummary.inrSummary?.totalExpenses ?: java.math.BigDecimal.ZERO
+                    val transactionCount = filteredTxns.size
+                    com.everypaisa.tracker.presentation.home.QuickStatsRow(
+                        totalSpent = totalExpenses,
+                        transactionCount = transactionCount
+                    )
                 }
 
                 // Section header

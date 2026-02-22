@@ -48,6 +48,8 @@ fun AnalyticsScreen(
     viewModel: AnalyticsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showCountryMenu by remember { mutableStateOf(false) }
+    val countries = remember { com.everypaisa.tracker.domain.model.Country.values().toList() }
 
     Scaffold(
         topBar = {
@@ -56,6 +58,27 @@ fun AnalyticsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showCountryMenu = true }) {
+                            Icon(Icons.Default.Public, contentDescription = "Select Country")
+                        }
+                        DropdownMenu(
+                            expanded = showCountryMenu,
+                            onDismissRequest = { showCountryMenu = false }
+                        ) {
+                            countries.forEach { country ->
+                                DropdownMenuItem(
+                                    text = { Text("${country.flag} ${country.label}") },
+                                    onClick = {
+                                        viewModel.setSelectedCountry(country)
+                                        showCountryMenu = false
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             )

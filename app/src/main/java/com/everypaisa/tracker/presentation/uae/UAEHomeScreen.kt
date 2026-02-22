@@ -83,6 +83,16 @@ fun UAEHomeScreen(
                         }
                     }
                     
+                    // Quick Stats Row (using filtered summary)
+                    item {
+                        val totalExpenses = state.multiCurrencySummary.inrSummary?.totalExpenses ?: java.math.BigDecimal.ZERO
+                        val transactionCount = state.transactions.size
+                        QuickStatsRow(
+                            totalSpent = totalExpenses,
+                            transactionCount = transactionCount
+                        )
+                    }
+                    
                     // Transactions Header
                     item {
                         Row(
