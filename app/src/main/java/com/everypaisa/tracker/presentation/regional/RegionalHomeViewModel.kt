@@ -25,6 +25,8 @@ class RegionalHomeViewModel @Inject constructor(
     // Currencies are set by the screen after creation (keyed per region)
     private val _currencies = MutableStateFlow<Set<String>>(emptySet())
     private val _selectedPeriod = MutableStateFlow(Period.currentMonth())
+    private val _selectedBank = MutableStateFlow<String?>(null)
+    val selectedBank: StateFlow<String?> = _selectedBank.asStateFlow()
 
     fun setCurrencies(currencies: Set<String>) {
         if (_currencies.value != currencies) {
@@ -32,6 +34,31 @@ class RegionalHomeViewModel @Inject constructor(
             Log.d(TAG, "💱 Currencies set: $currencies")
         }
     }
+
+    // Raw transactions (unfiltered by bank, but filtered by currency)
+    private val _rawTransactions = MutableStateFlow<List<TransactionEntity>>(emptyList())
+
+    /** Distinct bank names for the filter chip row */
+    val availableBanks: StateFlow<List<String>> = _rawTransactions
+        .map { txns -> txns.mapNotNull { it.bankName }.filter { it.isNotBlank() }.distinct().sorted() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Transactions after applying the selected bank filter */
+    val filteredTransactions: StateFlow<List<TransactionEntity>> =
+        combine(_rawTransactions, _selectedBank) { txns, bank ->
+            if (bank == null) txns else txns.filter { it.bankName == bank }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Summary calculated from filtered transactions (respects bank filter) */
+    val filteredSummary: StateFlow<MultiCurrencySummary> = combine(
+        filteredTransactions, _currencies
+    ) { txns, currencies ->
+        if (currencies.isEmpty() || txns.isEmpty()) {
+            MultiCurrencySummary(null, emptyList())
+        } else {
+            calculateSummary(txns, currencies)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, MultiCurrencySummary(null, emptyList()))
 
     val uiState: StateFlow<RegionalHomeUiState> = combine(
         _currencies, _selectedPeriod
@@ -47,6 +74,8 @@ class RegionalHomeViewModel @Inject constructor(
                 val filtered = allTransactions.filter { txn ->
                     txn.currency.uppercase() in currencies
                 }
+                // Update raw transactions for bank filtering
+                _rawTransactions.value = filtered
                 Log.d(TAG, "💱 [${currencies.joinToString(",")}] ${filtered.size}/${allTransactions.size} transactions")
                 val summary = calculateSummary(filtered, currencies)
                 RegionalHomeUiState.Success(
@@ -93,15 +122,22 @@ class RegionalHomeViewModel @Inject constructor(
     }
 
     fun goToPreviousPeriod() {
+        _selectedBank.value = null  // reset bank filter on period change
         _selectedPeriod.value = _selectedPeriod.value.previous()
     }
 
     fun goToNextPeriod() {
+        _selectedBank.value = null  // reset bank filter on period change
         _selectedPeriod.value = _selectedPeriod.value.next()
     }
 
     fun selectPeriodType(type: DashboardPeriod) {
+        _selectedBank.value = null  // reset bank filter on period change
         _selectedPeriod.value = Period.forType(type)
+    }
+
+    fun setSelectedBank(bank: String?) {
+        _selectedBank.value = bank
     }
 }
 

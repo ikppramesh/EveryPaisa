@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.everypaisa.tracker.presentation.home.BankFilterChips
 import com.everypaisa.tracker.presentation.home.EnhancedTransactionCard
 import com.everypaisa.tracker.presentation.home.MultiCurrencySummaryCard
 import com.everypaisa.tracker.presentation.home.PeriodNavigationBar
+import com.everypaisa.tracker.presentation.home.PeriodTypeSelector
 import java.time.format.DateTimeFormatter
 
 /**
@@ -51,11 +53,24 @@ fun RegionalHomeScreen(
         }
 
         is RegionalHomeUiState.Success -> {
+            val availableBanks by viewModel.availableBanks.collectAsState()
+            val selectedBank by viewModel.selectedBank.collectAsState()
+            val filteredTxns by viewModel.filteredTransactions.collectAsState()
+            val filteredSummary by viewModel.filteredSummary.collectAsState()
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Period Type Selector (Daily / Weekly / Monthly / Yearly)
+                item {
+                    PeriodTypeSelector(
+                        selectedType = state.currentPeriod.type,
+                        onTypeSelected = { viewModel.selectPeriodType(it) }
+                    )
+                }
+
                 // Period navigation bar
                 item {
                     PeriodNavigationBar(
@@ -65,13 +80,24 @@ fun RegionalHomeScreen(
                     )
                 }
 
-                // Multi-currency summary card
+                // Multi-currency summary card (using filtered summary)
                 item {
                     MultiCurrencySummaryCard(
-                        multiCurrencySummary = state.multiCurrencySummary,
+                        multiCurrencySummary = filteredSummary,
                         period = state.currentPeriod.format(),
                         periodType = state.currentPeriod.type
                     )
+                }
+
+                // Bank Filter Chips
+                if (availableBanks.isNotEmpty()) {
+                    item {
+                        BankFilterChips(
+                            banks = availableBanks,
+                            selectedBank = selectedBank,
+                            onBankSelected = { viewModel.setSelectedBank(it) }
+                        )
+                    }
                 }
 
                 // Section header
@@ -97,8 +123,8 @@ fun RegionalHomeScreen(
                 }
 
                 // Transaction list
-                if (state.transactions.isNotEmpty()) {
-                    items(state.transactions, key = { it.id }) { transaction ->
+                if (filteredTxns.isNotEmpty()) {
+                    items(filteredTxns, key = { it.id }) { transaction ->
                         EnhancedTransactionCard(
                             merchantName = transaction.merchantName,
                             amount = transaction.amount,
