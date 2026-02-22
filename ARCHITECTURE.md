@@ -1,9 +1,12 @@
 # Technical Architecture Document
-# Everypaisa — System Architecture & Engineering Guide
+# Everypaisa — Multi-Currency Expense Tracker System Architecture
 
-**Version:** 1.0  
-**Date:** February 16, 2026  
-**Package:** `com.everypaisa.tracker`
+**Version:** 2.0  
+**Date:** February 22, 2026  
+**Package:** `com.everypaisa.tracker`  
+**Supported Regions:** 🇮🇳 India | 🇦🇪 UAE | 🇺🇸 USA | 🇬🇧 UK | 🇸🇦 Saudi Arabia | Global  
+**Supported Currencies:** 30+ (AED, INR, USD, SAR, EUR, GBP, JPY, CNY, AUD, CAD, etc.)  
+**Supported Banks:** 40+ (Indian & International)
 
 ---
 

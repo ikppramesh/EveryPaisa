@@ -248,3 +248,45 @@ data class Period(
         }
     }
 }
+enum class Country(
+    val code: String,
+    val label: String,
+    val flag: String,
+    val region: String,
+    val primaryCurrency: String,
+    val supportedCurrencies: List<String>
+) {
+    // Asia
+    INDIA("IN", "India", "🇮🇳", "South Asia", "INR", listOf("INR", "USD", "EUR", "GBP")),
+    UAE("AE", "UAE", "🇦🇪", "Middle East", "AED", listOf("AED", "SAR", "QAR", "OMR", "KWD", "BHD", "USD", "EUR")),
+    NEPAL("NP", "Nepal", "🇳🇵", "South Asia", "NPR", listOf("NPR", "INR", "USD", "EUR", "GBP")),
+    THAILAND("TH", "Thailand", "🇹🇭", "Southeast Asia", "THB", listOf("THB", "USD", "EUR", "GBP", "AED")),
+    MALAYSIA("MY", "Malaysia", "🇲🇾", "Southeast Asia", "MYR", listOf("MYR", "USD", "EUR", "GBP", "SGD")),
+    SINGAPORE("SG", "Singapore", "🇸🇬", "Southeast Asia", "SGD", listOf("SGD", "USD", "EUR", "GBP", "MYR")),
+    PAKISTAN("PK", "Pakistan", "🇵🇰", "South Asia", "PKR", listOf("PKR", "USD", "EUR", "GBP", "AED")),
+    BANGLADESH("BD", "Bangladesh", "🇧🇩", "South Asia", "BDT", listOf("BDT", "USD", "EUR", "INR")),
+    
+    // Middle East & Africa
+    SAUDI_ARABIA("SA", "Saudi Arabia", "🇸🇦", "Middle East", "SAR", listOf("SAR", "AED", "USD", "EUR", "GBP")),
+    EGYPT("EG", "Egypt", "🇪🇬", "Africa", "EGP", listOf("EGP", "USD", "EUR", "AED")),
+    KENYA("KE", "Kenya", "🇰🇪", "Africa", "KES", listOf("KES", "USD", "EUR", "GBP")),
+    ETHIOPIA("ET", "Ethiopia", "🇪🇹", "Africa", "ETB", listOf("ETB", "USD", "EUR")),
+    SOUTH_AFRICA("ZA", "South Africa", "🇿🇦", "Africa", "ZAR", listOf("ZAR", "USD", "EUR", "GBP")),
+    
+    // Europe
+    UK("GB", "United Kingdom", "🇬🇧", "Europe", "GBP", listOf("GBP", "EUR", "USD", "AED")),
+    GERMANY("DE", "Germany", "🇩🇪", "Europe", "EUR", listOf("EUR", "GBP", "USD")),
+    FRANCE("FR", "France", "🇫🇷", "Europe", "EUR", listOf("EUR", "GBP", "USD")),
+    
+    // Americas
+    USA("US", "United States", "🇺🇸", "Americas", "USD", listOf("USD", "EUR", "GBP", "CAD", "MXN")),
+    CANADA("CA", "Canada", "🇨🇦", "Americas", "CAD", listOf("CAD", "USD", "EUR")),
+    MEXICO("MX", "Mexico", "🇲🇽", "Americas", "MXN", listOf("MXN", "USD", "EUR"));
+
+    companion object {
+        fun fromCode(code: String): Country? = values().find { it.code == code }
+        fun getDefault(): Country = INDIA
+        fun getByRegion(region: String): List<Country> = values().filter { it.region == region }
+        fun getAllRegions(): List<String> = values().map { it.region }.distinct().sorted()
+    }
+}

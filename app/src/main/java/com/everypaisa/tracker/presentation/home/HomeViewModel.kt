@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.everypaisa.tracker.data.entity.TransactionEntity
 import com.everypaisa.tracker.data.entity.TransactionType
 import com.everypaisa.tracker.domain.model.CurrencySummary
+import com.everypaisa.tracker.domain.model.Country
 import com.everypaisa.tracker.domain.model.DashboardPeriod
 import com.everypaisa.tracker.domain.model.MonthSummary
 import com.everypaisa.tracker.domain.model.MultiCurrencySummary
@@ -26,6 +27,10 @@ class HomeViewModel @Inject constructor(
     
     private val TAG = "HomeViewModel"
 
+    // Current selected country
+    private val _selectedCountry = MutableStateFlow(Country.INDIA)
+    val selectedCountry: StateFlow<Country> = _selectedCountry.asStateFlow()
+
     // Current selected period (drives the dashboard)
     private val _selectedPeriod = MutableStateFlow(Period.currentMonth())
     val selectedPeriod: StateFlow<Period> = _selectedPeriod.asStateFlow()
@@ -34,44 +39,53 @@ class HomeViewModel @Inject constructor(
     private val _selectedBank = MutableStateFlow<String?>(null)
     val selectedBank: StateFlow<String?> = _selectedBank.asStateFlow()
 
+    fun setSelectedCountry(country: Country) {
+        _selectedCountry.value = country
+        _selectedBank.value = null  // reset bank filter when country changes
+    }
+
     fun setSelectedBank(bank: String?) {
         _selectedBank.value = bank
     }
 
-    // Raw INR transactions (unfiltered by bank)
+    // Raw transactions (unfiltered by bank, but filtered by country)
     private val _rawTransactions = MutableStateFlow<List<TransactionEntity>>(emptyList())
 
-    // UI State reacts to period changes automatically
-    val uiState: StateFlow<HomeUiState> = _selectedPeriod.flatMapLatest { period ->
-        Log.d(TAG, "📅 Period changed: ${period.format()} (${period.type})")
-        combine(
-            transactionRepository.getTransactionsForPeriod(period),
-            transactionRepository.getMonthSummary(period)
-        ) { allTransactions, summary ->
-            // Filter only INR transactions for Indian home screen
-            val inrTransactions = allTransactions.filter { txn ->
-                txn.currency.uppercase() == "INR"
+    // UI State reacts to period & country changes automatically
+    val uiState: StateFlow<HomeUiState> = combine(_selectedPeriod, _selectedCountry)
+        { period, country -> Pair(period, country) }
+        .flatMapLatest { (period, country) ->
+            Log.d(TAG, "📅 Period changed: ${period.format()} (${period.type}), Country: ${country.label}")
+            combine(
+                transactionRepository.getTransactionsForPeriod(period),
+                transactionRepository.getMonthSummary(period)
+            ) { allTransactions, summary ->
+                // Filter transactions by country's supported currencies
+                val countryTransactions = allTransactions.filter { txn ->
+                    txn.currency.uppercase() in country.supportedCurrencies.map { it.uppercase() }
+                }
+                // Deduplicate: keep only one per (amount, bankName, dateTime-minute)
+                val deduplicated = countryTransactions
+                    .groupBy { Triple(it.amount, it.bankName, it.dateTime.withSecond(0).withNano(0)) }
+                    .map { (_, group) -> group.first() }
+                    .sortedByDescending { it.dateTime }
+
+                Log.d(TAG, "🌍 ${country.label} Transactions: ${deduplicated.size}/${allTransactions.size}")
+
+                _rawTransactions.value = deduplicated
+
+                val multiCurrencySummary = calculateMultiCurrencySummary(deduplicated, country)
+
+                HomeUiState.Success(
+                    transactions = deduplicated,
+                    monthSummary = summary,
+                    currentPeriod = period,
+                    multiCurrencySummary = multiCurrencySummary,
+                    selectedCountry = country
+                ) as HomeUiState
             }
-            // Deduplicate: keep only one per (amount, bankName, dateTime-minute)
-            val deduplicated = inrTransactions
-                .groupBy { Triple(it.amount, it.bankName, it.dateTime.withSecond(0).withNano(0)) }
-                .map { (_, group) -> group.first() }
-                .sortedByDescending { it.dateTime }
-
-            Log.d(TAG, "🇮🇳 Indian Transactions: ${deduplicated.size}/${allTransactions.size}")
-
-            _rawTransactions.value = deduplicated
-
-            val multiCurrencySummary = calculateMultiCurrencySummary(deduplicated)
-
-            HomeUiState.Success(
-                transactions = deduplicated,
-                monthSummary = summary,
-                currentPeriod = period,
-                multiCurrencySummary = multiCurrencySummary
-            ) as HomeUiState
         }
-    }.catch { e ->
+    .catch { e ->
         Log.e(TAG, "❌ Error in UI state: ${e.message}", e)
         emit(HomeUiState.Error(e.message ?: "Unknown error"))
     }.stateIn(
@@ -91,7 +105,11 @@ class HomeViewModel @Inject constructor(
             if (bank == null) txns else txns.filter { it.bankName == bank }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private fun calculateMultiCurrencySummary(transactions: List<TransactionEntity>): MultiCurrencySummary {
+    /** Available countries */
+    val availableCountries: StateFlow<List<Country>> = MutableStateFlow(Country.values().toList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Country.values().toList())
+
+    private fun calculateMultiCurrencySummary(transactions: List<TransactionEntity>, country: Country): MultiCurrencySummary {
         // Group transactions by currency
         val byCurrency = transactions.groupBy { it.currency }
         
@@ -112,12 +130,12 @@ class HomeViewModel @Inject constructor(
             )
         }
         
-        // Separate INR from international
-        val inrSummary = currencySummaries.firstOrNull { it.currency.uppercase() == "INR" }
-        val internationalSummaries = currencySummaries.filter { it.currency.uppercase() != "INR" }
+        // Use country's primary currency as main summary
+        val primarySummary = currencySummaries.firstOrNull { it.currency.uppercase() == country.primaryCurrency }
+        val internationalSummaries = currencySummaries.filter { it.currency.uppercase() != country.primaryCurrency }
         
         return MultiCurrencySummary(
-            inrSummary = inrSummary,
+            inrSummary = primarySummary,
             internationalSummaries = internationalSummaries
         )
     }
@@ -158,7 +176,9 @@ sealed interface HomeUiState {
         val transactions: List<TransactionEntity>,
         val monthSummary: MonthSummary,
         val currentPeriod: Period,
-        val multiCurrencySummary: MultiCurrencySummary
+        val multiCurrencySummary: MultiCurrencySummary,
+        val selectedCountry: Country
     ) : HomeUiState
     data class Error(val message: String) : HomeUiState
 }
+

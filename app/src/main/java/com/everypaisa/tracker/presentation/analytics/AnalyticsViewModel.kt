@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.everypaisa.tracker.data.dao.TransactionDao
 import com.everypaisa.tracker.data.entity.TransactionEntity
 import com.everypaisa.tracker.data.entity.TransactionType
+import com.everypaisa.tracker.domain.model.Country
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -44,7 +45,8 @@ data class AnalyticsUiState(
     val selectedBarIndex: Int? = null,
     val selectedBarTransactions: List<TransactionEntity> = emptyList(),
     val sortBy: SortOption = SortOption.AMOUNT_HIGH_TO_LOW,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val selectedCountry: Country = Country.INDIA
 )
 
 @HiltViewModel
@@ -52,11 +54,18 @@ class AnalyticsViewModel @Inject constructor(
     private val transactionDao: TransactionDao
 ) : ViewModel() {
 
+    private val _selectedCountry = MutableStateFlow(Country.INDIA)
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
 
     init {
         loadChart(ChartPeriod.MONTHLY)
+    }
+
+    fun setSelectedCountry(country: Country) {
+        _selectedCountry.value = country
+        _uiState.update { it.copy(selectedCountry = country, selectedBarIndex = null, selectedBarTransactions = emptyList()) }
+        loadChart(_uiState.value.chartPeriod)
     }
 
     fun selectPeriod(period: ChartPeriod) {
@@ -80,7 +89,11 @@ class AnalyticsViewModel @Inject constructor(
         viewModelScope.launch {
             transactionDao.getTransactionsForPeriod(bar.startMillis, bar.endMillis)
                 .collect { transactions ->
-                    val sorted = sortTransactions(transactions, _uiState.value.sortBy)
+                    val country = _selectedCountry.value
+                    val countryFiltered = transactions.filter { txn ->
+                        txn.currency.uppercase() in country.supportedCurrencies.map { it.uppercase() }
+                    }
+                    val sorted = sortTransactions(countryFiltered, _uiState.value.sortBy)
                     _uiState.update { it.copy(selectedBarTransactions = sorted) }
                 }
         }
@@ -91,22 +104,20 @@ class AnalyticsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             transactionDao.getAllTransactionsSync().let { allTransactions ->
-                if (allTransactions.isEmpty()) {
+                val country = _selectedCountry.value
+                val countryFiltered = allTransactions.filter { txn ->
+                    txn.currency.uppercase() in country.supportedCurrencies.map { it.uppercase() }
+                }
+                
+                if (countryFiltered.isEmpty()) {
                     _uiState.update { it.copy(bars = emptyList(), isLoading = false) }
                     return@launch
                 }
 
                 val bars = when (period) {
-                    ChartPeriod.YEARLY -> aggregateYearly(allTransactions)
-                    ChartPeriod.MONTHLY -> aggregateMonthly(allTransactions)
-                    ChartPeriod.WEEKLY -> aggregateWeekly(allTransactions)
-                }
-
-                _uiState.update { it.copy(bars = bars, isLoading = false) }
-
-                // Auto-select the last bar
-                if (bars.isNotEmpty()) {
-                    selectBar(bars.lastIndex)
+                    ChartPeriod.YEARLY -> aggregateYearly(countryFiltered)
+                    ChartPeriod.MONTHLY -> aggregateMonthly(countryFiltered)
+                    ChartPeriod.WEEKLY -> aggregateWeekly(countryFiltered)
                 }
             }
         }

@@ -375,8 +375,13 @@ class SmsTransactionProcessor @Inject constructor(
             return true
         }
         
-        // Balance inquiry (not a transaction)
-        if ((lower.contains("balance") || lower.contains("bal")) && (
+        // Balance inquiry (not a transaction) — only filter if there's NO actual transaction context
+        val hasTransactionContext = lower.contains("purchase") || lower.contains("debited") ||
+                lower.contains("credited") || lower.contains("transaction") ||
+                lower.contains("payment") || lower.contains("transfer") ||
+                lower.contains("spent") || lower.contains("withdrawn") ||
+                lower.contains("using") && (lower.contains("card") || lower.contains("debit") || lower.contains("credit"))
+        if (!hasTransactionContext && (lower.contains("balance") || lower.contains("bal")) && (
                 lower.contains("available") || 
                 lower.contains("current") ||
                 lower.contains("is rs") ||
@@ -425,10 +430,15 @@ class SmsTransactionProcessor @Inject constructor(
             return true
         }
         
-        // Welcome messages
-        if (lower.contains("welcome to") || 
-            lower.contains("thank you for") ||
-            lower.contains("congratulations")) {
+        // Welcome messages — but NOT real transaction SMS that happen to start with "Thank you for using your card"
+        val isRealTransaction = lower.contains("card ending") || lower.contains("card no") ||
+                lower.contains("ending with") || lower.contains("a/c") ||
+                (lower.contains("aed") || lower.contains("inr") || lower.contains("rs.") || lower.contains("usd")) &&
+                (lower.contains("card") || lower.contains("debit") || lower.contains("credit"))
+        if (!isRealTransaction && (
+                lower.contains("welcome to") || 
+                lower.contains("thank you for") ||
+                lower.contains("congratulations"))) {
             return true
         }
         

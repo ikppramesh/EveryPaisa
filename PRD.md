@@ -1,10 +1,12 @@
 # Product Requirements Document (PRD)
-# Everypaisa — SMS-Powered Expense Tracker for Android
+# Everypaisa — SMS-Powered Multi-Currency Expense Tracker for Android
 
-**Version:** 1.0  
-**Date:** February 16, 2026  
-**Status:** Draft  
-**License:** Proprietary
+**Version:** 2.1  
+**Date:** February 22, 2026  
+**Status:** Active Development  
+**License:** Proprietary  
+**Contact:** every.paisa.app@gmail.com  
+**Social:** [@everypaisa_app](https://x.com/everypaisa_app) | [@every.paisa](https://www.instagram.com/every.paisa)
 
 ---
 
@@ -34,17 +36,18 @@
 **Tagline:** *Every paisa accounted for — automatically.*
 
 **What It Does:**  
-Everypaisa is a privacy-first Android app that automatically reads bank SMS messages and transforms them into a clean, searchable money timeline with on-device AI assistance. It provides comprehensive expense dashboards (daily, weekly, monthly), intelligent categorization, subscription tracking, budget management, and an AI chat assistant — all without any data ever leaving the user's device.
+Everypaisa is a privacy-first, multi-currency Android app that automatically reads bank SMS messages in any language and currency, transforming them into a clean, searchable money timeline. It provides comprehensive expense dashboards (daily, weekly, monthly), intelligent categorization, subscription tracking, budget management, and on-device AI assistance — all without any data ever leaving the user's device.
 
 **Key Differentiators:**
-- 100% on-device processing (no cloud, no servers, no tracking)
-- Zero manual entry — fully automatic SMS parsing
-- On-device AI assistant (MediaPipe/Qwen 2.5) for natural-language financial queries
-- Support for 35+ Indian banks, UPI platforms, credit cards
-- Multi-currency support with exchange rates
-- Subscription/recurring payment detection
-- Budget groups with category-level spending tracking
-- Modern Material You design with dynamic theming
+- ✅ **100% on-device processing** (no cloud, no servers, no tracking)
+- ✅ **Zero manual entry** — fully automatic SMS parsing
+- ✅ **Multi-Currency Support** — AED (🇦🇪 UAE), INR (🇮🇳 India), USD, SAR, OMR, QAR, KWD, BHD, EUR, GBP, and 20+ more
+- ✅ **40+ Bank Support** — Indian banks (HDFC, ICICI, SBI, Axis, Kotak, etc.) + International banks (Emirates NBD, FAB, Mashreq, etc.)
+- ✅ **UPI & Digital Wallets** — Google Pay, PhonePe, PayTm, Amazon Pay
+- ✅ **Multi-Device Android** — Works on all Android devices (phones, tablets, foldables) from API 26+
+- ✅ **Subscription Detection** — Recurring payment detection with mandate tracking
+- ✅ **Budget Tracking** — Category-level spending goals with alerts
+- ✅ **Modern Material You Design** — Dynamic theming and dark mode
 
 ---
 
@@ -95,9 +98,12 @@ An intelligent, privacy-first Android app that:
 
 ## 4. Target Audience & Personas
 
-### Geographic Focus
-- **Primary:** India (SMS-based transaction alerts are standard across all banks)
-- **Future:** UAE, Nepal, USA, Thailand, Ethiopia, Kenya
+### Geographic & Device Support
+- **Supported Regions:** 🇮🇳 India | 🇦🇪 UAE | 🇺🇸 USA | 🇬🇧 UK | 🇸🇦 Saudi Arabia | Nepal, Thailand, Ethiopia, Kenya, Malaysia, Singapore
+- **Device Support:** All Android devices (Phones, Tablets, Samsung Folds, Google Pixels, Xiaomi, OnePlus, Realme, etc.)
+- **Minimum API Level:** 26 (Android 8.0 Oreo+)
+- **Languages:** English, Hindi, Arabic (planned Phase 3)
+- **Currencies:** 30+ supported including AED, INR, USD, SAR, OMR, QAR, KWD, BHD, EUR, GBP, JPY, CNY, AUD, CAD, SGD, HKD, and more
 
 ### Persona 1: "Priya" — Busy Tech Professional
 | Attribute | Detail |
@@ -366,7 +372,23 @@ An intelligent, privacy-first Android app that:
 | Custom exchange rates | Override with user-defined rates |
 | Per-currency analytics | Filter all analytics by currency |
 
-#### F16: App Lock (Biometric)
+#### F16: Multi-Country Filtering
+**Priority:** P1 (High)  
+**Route:** Global (Home, Transactions, Analytics screens)
+
+| Feature | Details |
+|---|---|
+| Country selector | Dropdown with 20+ countries (India, UAE, USA, UK, Saudi Arabia, Nepal, Thailand, Malaysia, Singapore, Canada, Mexico, Germany, France, Egypt, Kenya, Ethiopia, South Africa, Pakistan, Bangladesh) |
+| Region grouping | Organize countries by region (South Asia, Middle East, Americas, Europe, Africa, Southeast Asia) |
+| Currency filtering | Show only transactions in currencies supported by selected country |
+| Bank filtering | Display banks relevant to selected country |
+| Home dashboard | Country-specific primary currency and summary |
+| Transaction list | Filter transactions by selected country and its currencies |
+| Analytics | Country-specific charts and category breakdown |
+| Settings persistence | Remember last selected country across sessions |
+| Flag indicators | Country flags in UI for visual reference |
+
+#### F17: App Lock (Biometric)
 **Priority:** P2 (Medium)  
 **Route:** `appLock`
 

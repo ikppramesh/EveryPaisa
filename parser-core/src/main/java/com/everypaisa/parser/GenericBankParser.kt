@@ -29,7 +29,8 @@ class GenericBankParser : BankParser {
         "debited", "debit", "spent", "withdrawn", "purchase",
         "charged", "used at", "deducted", "sent to", "txn of",
         "transaction of", "your txn", "payment made", "paid to",
-        "payment done", "amount paid"
+        "payment done", "amount paid", "using",
+        "for aed", "for usd", "for eur", "for gbp"
     )
 
     // Strong credit keywords — money definitely coming IN (high confidence)

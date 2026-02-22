@@ -1,11 +1,11 @@
-# EveryPaisa 💰
+# EveryPaisa 💰 — Multi-Currency Expense Tracker
 
 <p align="center">
   <img src="everyPaisa.png" alt="EveryPaisa Logo" width="200"/>
 </p>
 
 <p align="center">
-  <strong>Every paisa accounted for — automatically.</strong>
+  <strong>Every paisa accounted for — automatically. Now supporting 30+ currencies worldwide.</strong>
 </p>
 
 <p align="center">
@@ -14,28 +14,38 @@
   <img src="https://img.shields.io/badge/Language-Kotlin-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License">
   <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg" alt="Privacy">
-  <img src="https://img.shields.io/badge/Version-1.1.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.1.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Currencies-30%2B-gold.svg" alt="Currencies">
 </p>
+
+**📧 Email:** [every.paisa.app@gmail.com](mailto:every.paisa.app@gmail.com)  
+**🐦 Twitter:** [@everypaisa_app](https://x.com/everypaisa_app)  
+**📸 Instagram:** [@every.paisa](https://www.instagram.com/every.paisa)
 
 ---
 
 ##  Overview
 
-**EveryPaisa** is a privacy-first Android expense tracker that automatically reads bank SMS messages and transforms them into a clean, searchable money timeline. Built with **100% on-device processing** — no cloud, no servers, no data ever leaves your phone.
+**EveryPaisa** is a privacy-first, multi-currency Android expense tracker that automatically reads bank SMS messages and transforms them into a clean, searchable money timeline. Built with **100% on-device processing** — no cloud, no servers, no data ever leaves your phone. Works on all Android devices from API 26+ (Android 8.0 Oreo).
 
 ### ✨ Key Features
 
 - 🔒 **100% Privacy-First** — All processing happens on your device, zero internet required
-- 🤖 **Automatic SMS Parsing** — Supports 35+ Indian banks, credit cards & UPI platforms
-- 📊 **Smart Analytics** — Daily, weekly, monthly, yearly spending insights with interactive charts
-- 💳 **Multi-Bank Support** — HDFC, ICICI, SBI, Axis, Kotak, IDFC First, and 30+ more
-- 🎯 **Auto-Categorization** — Intelligent expense categorization with custom categories
+- 🤖 **Automatic SMS Parsing** — Supports 40+ Indian & International banks
+- 💱 **Multi-Currency Support** — AED (UAE), INR (India), USD, SAR, EUR, GBP, and 24+ more
+- 🌍 **Multi-Country Filtering** — Switch between 20+ countries with country-specific filters for currencies, banks, and analytics
+- 🌏 **Global Bank Support** — Indian banks (HDFC, ICICI, SBI, Axis, Kotak) + International (Emirates NBD, Mashreq, FAB, Citi, HSBC)
+- 📊 **Smart Analytics** — Daily, weekly, monthly, yearly spending insights with charts
+- 💳 **Multi-Bank & Digital Wallets** — Credit cards, debit cards, UPI (Google Pay, PhonePe, PayTm), Amazon Pay
+- 🎯 **Auto-Categorization** — Intelligent expense categorization with 15+ custom categories
 - 🔄 **Failed Transaction Handling** — Automatically detects and processes refunds/reversals
 - 🛡️ **SMS Filtering** — Filters out OTP, promotional, and non-transactional messages
 - 🔐 **Biometric App Lock** — Secure your financial data with fingerprint/face unlock
 - 🎨 **Material You Design** — Modern UI with dynamic theming and dark mode
+- 📱 **Multi-Device Support** — Works on phones, tablets, and foldable devices
 - 📈 **Drill-Down Analytics** — Tap charts to view detailed transactions for any period
 - 🔢 **Multi-Sort Options** — Sort by amount, date, or merchant name
+- 🔄 **Subscription Detection** — Recurring payment detection with mandate tracking
 
 ---
 
@@ -46,9 +56,42 @@
 | 😓 Manual expense entry is tedious | ✅ Fully automatic — zero manual entry |
 | 🔓 Privacy concerns with cloud trackers | ✅ 100% on-device processing |
 | 📱 Fragmented view across banking apps | ✅ Unified dashboard for all banks |
+| 💱 No multi-currency support | ✅ 30+ currencies (AED, USD, INR, EUR, SAR, etc.) |
 | ❌ Failed transactions not handled | ✅ Auto-detects reversals & creates refunds |
 | 📧 OTP/promotional SMS clutter | ✅ Smart filtering of non-transactions |
 | 📊 No spending insights | ✅ Rich analytics with period comparison |
+| 📱 Limited device compatibility | ✅ Works on all Android devices (phones, tablets, folds) |
+
+---
+
+## 🌍 Supported Banks & Regions
+
+### 🇮🇳 India (30+ Banks)
+**Major Banks:** HDFC, ICICI, SBI, Axis, Kotak, IDFC First, Federal, PNB, BOB, Canara, Union Bank
+
+**Regional Banks:** Yes Bank, IndusInd, Airtel Payments, Jio Finance
+
+**Digital Wallets:** Google Pay, PhonePe, PayTm, Amazon Pay
+
+### 🇦🇪 UAE (International Banks)
+**Banks:** Emirates NBD, FAB, Mashreq, ADIB, DIB
+
+### 🌐 International
+**Global Banks:** Citi, HSBC, Standard Chartered, and more
+
+---
+
+## 💱 Supported Currencies (30+)
+
+**Middle East:** AED (UAE) • SAR (Saudi Arabia) • OMR (Oman) • QAR (Qatar) • KWD (Kuwait) • BHD (Bahrain)
+
+**Asia:** INR (India) • USD • EUR • GBP • JPY (Japan) • CNY (China) • SGD (Singapore) • HKD (Hong Kong) • AUD (Australia) • CAD (Canada) • NZD (New Zealand)
+
+**South Asia:** NPR (Nepal) • PKR (Pakistan) • LKR (Sri Lanka) • BDT (Bangladesh)
+
+**Southeast Asia:** THB (Thailand) • MYR (Malaysia) • IDR (Indonesia) • PHP (Philippines) • VND (Vietnam)
+
+**Others:** KRW (Korea) • TRY (Turkey) • RUB (Russia) • ZAR (South Africa) • BRL (Brazil) • MEX (Mexico)
 
 ---
 
@@ -74,10 +117,13 @@ EveryPaisa follows **Clean Architecture** principles with **MVVM** pattern:
 - **UI**: Jetpack Compose with Material 3 (Material You)
 - **Architecture**: MVVM + Clean Architecture + UDF (Unidirectional Data Flow)
 - **DI**: Hilt (Dagger)
-- **Database**: Room (SQLite) with TypeConverters
+- **Database**: Room (SQLite) with TypeConverters for multi-currency support
 - **Async**: Kotlin Coroutines + Flow + StateFlow
 - **Navigation**: Compose Navigation (type-safe)
 - **Background**: WorkManager for SMS scanning
+- **Parser**: Multi-currency & multi-bank SMS parser (40+ banks, 30+ currencies)
+- **Minimum SDK**: 26 (Android 8.0 Oreo+)
+- **Target SDK**: 34+ (Android 14+)
 - **Biometric**: AndroidX Biometric API
 - **Charts**: Pure Compose Canvas (no external dependencies)
 - **Min SDK**: API 26 (Android 8.0)
@@ -424,6 +470,41 @@ everypaisa-android/
 ---
 
 ## 📋 Changelog
+
+### Version 2.1.0 (February 22, 2026)
+
+#### 🌍 **Multi-Country Filtering**
+- Added **20+ country support** with dedicated country selector across all screens
+- Supported countries: India 🇮🇳, UAE 🇦🇪, USA 🇺🇸, UK 🇬🇧, Saudi Arabia 🇸🇦, Nepal 🇳🇵, Thailand 🇹🇭, Malaysia 🇲🇾, Singapore 🇸🇬, Canada 🇨🇦, Mexico 🇲🇽, Pakistan 🇵🇰, Bangladesh 🇧🇩, Egypt 🇪🇬, Kenya 🇰🇪, Ethiopia 🇪🇹, South Africa 🇿🇦, Germany 🇩🇪, France 🇫🇷
+- **Country-specific filtering**:
+  - Home dashboard shows country's primary currency
+  - Transactions filtered by country's supported currencies
+  - Analytics grouped by country's currency
+  - Banks displayed relevant to selected country
+- **Region-based grouping**: South Asia, Middle East, Africa, Europe, Americas, Southeast Asia
+- Countries remember last selection across app sessions
+- Flag indicators for visual country identification
+
+#### 🔧 **Technical Updates**
+- Created `Country` enum with 20+ countries, regions, primary currencies, and supported currencies
+- Updated `HomeViewModel` to support country selection and multi-country filtering
+- Updated `TransactionsViewModel` with country-aware transaction filtering
+- Updated `AnalyticsViewModel` with country-specific chart aggregation
+- All UI states now include `selectedCountry` for proper data binding
+- Enhanced `HomeUiState`, `TransactionsUiState`, and `AnalyticsUiState` with country data
+
+#### 📊 **Dashboard Improvements**
+- Country selector dropdown on home screen
+- Multi-currency summary respects selected country
+- Bank filter chips only show banks for selected country
+- Period navigation maintained across country changes
+
+#### ✨ **Analytics Enhancements**
+- Country-specific transaction breakdown
+- Charts and statistics filtered by country and its currencies
+- Regional spending patterns visualization
+
+---
 
 ### Version 1.2.0 (February 18, 2026)
 

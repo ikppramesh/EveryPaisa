@@ -3,6 +3,7 @@ package com.everypaisa.tracker.presentation.transactions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.everypaisa.tracker.data.entity.TransactionEntity
+import com.everypaisa.tracker.domain.model.Country
 import com.everypaisa.tracker.domain.model.Period
 import com.everypaisa.tracker.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,17 +16,24 @@ class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) : ViewModel() {
     
+    private val _selectedCountry = MutableStateFlow(Country.INDIA)
     private val _selectedPeriod = MutableStateFlow(Period.currentMonth())
     private val _selectedCategory = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
     
+    fun setSelectedCountry(country: Country) {
+        _selectedCountry.value = country
+    }
+    
     val uiState: StateFlow<TransactionsUiState> = combine(
+        _selectedCountry,
         _selectedPeriod,
         _selectedCategory,
         _searchQuery
-    ) { period, category, query ->
-        Triple(period, category, query)
-    }.flatMapLatest { (period, category, query) ->
+    ) { country, period, category, query ->
+        Triple(country, Pair(period, category), query)
+    }.flatMapLatest { (country, periodAndCategory, query) ->
+        val (period, category) = periodAndCategory
         val baseFlow = if (category != null) {
             transactionRepository.getTransactionsByCategory(category, period)
         } else {
@@ -33,20 +41,26 @@ class TransactionsViewModel @Inject constructor(
         }
         
         baseFlow.map { transactions ->
+            // Filter by country's supported currencies
+            val countryFiltered = transactions.filter { txn ->
+                txn.currency.uppercase() in country.supportedCurrencies.map { it.uppercase() }
+            }
+            
             val filtered = if (query.isNotBlank()) {
-                transactions.filter { 
+                countryFiltered.filter { 
                     it.merchantName.contains(query, ignoreCase = true) ||
                     it.category.contains(query, ignoreCase = true)
                 }
             } else {
-                transactions
+                countryFiltered
             }
             
             TransactionsUiState.Success(
                 transactions = filtered,
                 totalAmount = filtered.sumOf { it.amount },
                 period = period,
-                selectedCategory = category
+                selectedCategory = category,
+                selectedCountry = country
             ) as TransactionsUiState
         }
     }.catch {
@@ -76,7 +90,7 @@ sealed interface TransactionsUiState {
         val transactions: List<TransactionEntity>,
         val totalAmount: BigDecimal,
         val period: Period,
-        val selectedCategory: String?
-    ) : TransactionsUiState
+        val selectedCategory: String?,
+        val selectedCountry: Country    ) : TransactionsUiState
     data class Error(val message: String) : TransactionsUiState
 }
