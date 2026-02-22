@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Language-Kotlin-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License">
   <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg" alt="Privacy">
-  <img src="https://img.shields.io/badge/Version-2.1.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.1.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Currencies-30%2B-gold.svg" alt="Currencies">
 </p>
 
@@ -470,6 +470,39 @@ everypaisa-android/
 ---
 
 ## 📋 Changelog
+
+### Version 2.1.1 (February 22, 2026)
+
+#### 🎯 **Critical Fixes - Country Filtering**
+- ✅ **Added country selector UI** to HomeScreen, TransactionsScreen, and AnalyticsScreen
+- ✅ **Fixed transaction mixing** - Indian bank transactions no longer appear under UAE selection
+- ✅ **Fixed transaction count** - Now accurately shows count for selected country only
+- ✅ **Fixed total spent amount** - Correctly displays sum of transactions for selected country
+- ✅ **Fixed currency display** - Each screen shows proper currency symbol based on country selection
+- ✅ **Fixed bank filter** - Banks are now country-specific (only relevant banks shown)
+- ✅ **Fixed month summary** - Calculates totals only for selected country's transactions
+
+#### 🔧 **UI Improvements**
+- Country selector button in top app bar (shows country flag and code)
+- Easy country switching via dropdown dialog with all 20+ countries
+- Transaction cards display correct currency symbol per transaction
+- Month summary card shows country's primary currency
+- "Recent Transactions" label now shows selected country name
+
+#### 📊 **Data Accuracy**
+- HomeScreen filters transactions ONLY by selected country's supported currencies
+- TransactionsScreen shows country-filtered totals and transaction list
+- AnalyticsScreen displays only selected country's transactions in charts
+- Each currency symbol correctly represents the transaction's currency
+- No cross-contamination between countries anymore
+
+#### ✅ **Verified Working**
+- India (🇮🇳) filters - Shows only INR transactions from Indian banks
+- UAE (🇦🇪) filters - Shows only AED/GCC currency transactions (NO Indian banks)
+- USA (🇺🇸), UK (🇬🇧), SAR (🇸🇦) filters - Region-specific filtering working
+- All 20+ countries properly isolated with their respective currencies
+
+---
 
 ### Version 2.1.0 (February 22, 2026)
 
