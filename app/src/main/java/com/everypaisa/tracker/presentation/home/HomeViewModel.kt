@@ -111,21 +111,16 @@ class HomeViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Bank-filtered transactions for summary cards (ATM view filter does NOT affect totals) */
-    private val _bankFilteredTransactions: StateFlow<List<TransactionEntity>> =
-        combine(_rawTransactions, _selectedBank) { txns, bank ->
-            if (bank == null) txns else txns.filter { it.bankName == bank }
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    /** Transactions after applying bank + ATM-only filters (for transaction list display only) */
+    /** Transactions after applying bank + ATM-only filters (for both transaction list and summary tiles) */
     val filteredTransactions: StateFlow<List<TransactionEntity>> =
         combine(_rawTransactions, _selectedBank, _showAtmOnly) { txns, bank, atmOnly ->
             val bankFiltered = if (bank == null) txns else txns.filter { it.bankName == bank }
             if (atmOnly) bankFiltered.filter { it.isAtmWithdrawal } else bankFiltered
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** Summary calculated from bank-filtered transactions only — ATM view filter never zeroes out totals */
+    /** Summary calculated from filteredTransactions — ATM filter now affects totals */
     val filteredSummary: StateFlow<MultiCurrencySummary> = combine(
-        _bankFilteredTransactions, _selectedCountry
+        filteredTransactions, _selectedCountry
     ) { txns, country ->
         if (txns.isEmpty()) {
             MultiCurrencySummary(null, emptyList())
