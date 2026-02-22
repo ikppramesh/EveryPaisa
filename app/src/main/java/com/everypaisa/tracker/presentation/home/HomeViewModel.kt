@@ -136,17 +136,19 @@ class HomeViewModel @Inject constructor(
     private fun calculateMultiCurrencySummary(transactions: List<TransactionEntity>, country: Country): MultiCurrencySummary {
         // Group transactions by currency
         val byCurrency = transactions.groupBy { it.currency }
-        
+        val atmFilterActive = showAtmOnly.value
+
         val currencySummaries = byCurrency.map { (currency, txns) ->
             val income = txns
                 .filter { !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.CREDIT }
                 .sumOf { it.amount }
             val expenses = txns
-                .filter { !it.isAtmWithdrawal && !it.isInterAccountTransfer }
+                .filter {
+                    if (atmFilterActive) true else !it.isAtmWithdrawal && !it.isInterAccountTransfer
+                }
                 .filter { it.transactionType == TransactionType.EXPENSE }
                 .sumOf { it.amount }
-            
             CurrencySummary(
                 currency = currency,
                 currencySymbol = CurrencySummary.getCurrencySymbol(currency),
@@ -155,11 +157,11 @@ class HomeViewModel @Inject constructor(
                 transactionCount = txns.size
             )
         }
-        
+
         // Use country's primary currency as main summary
         val primarySummary = currencySummaries.firstOrNull { it.currency.uppercase() == country.primaryCurrency }
         val internationalSummaries = currencySummaries.filter { it.currency.uppercase() != country.primaryCurrency }
-        
+
         return MultiCurrencySummary(
             inrSummary = primarySummary,
             internationalSummaries = internationalSummaries
