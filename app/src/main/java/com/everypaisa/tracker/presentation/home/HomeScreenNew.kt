@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.everypaisa.tracker.R
 import com.everypaisa.tracker.data.entity.TransactionType
 import com.everypaisa.tracker.domain.model.CurrencySummary
 import com.everypaisa.tracker.domain.model.DashboardPeriod
@@ -104,7 +106,7 @@ fun HomeScreenNew(
             if (showTopBar) LargeTopAppBar(
                 title = { 
                     Text(
-                        "EveryPaisa",
+                        stringResource(id = R.string.app_name),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     ) 
@@ -254,11 +256,13 @@ fun HomeScreenNew(
                             )
                         }
                         
-                        // Quick Stats Row
+                        // Quick Stats Row (using filtered summary respecting bank selection)
                         item {
+                            val totalExpenses = filteredSummary.inrSummary?.totalExpenses ?: BigDecimal.ZERO
+                            val transactionCount = filteredTxns.size
                             QuickStatsRow(
-                                totalSpent = state.monthSummary.totalExpenses,
-                                transactionCount = state.monthSummary.transactionCount
+                                totalSpent = totalExpenses,
+                                transactionCount = transactionCount
                             )
                         }
 

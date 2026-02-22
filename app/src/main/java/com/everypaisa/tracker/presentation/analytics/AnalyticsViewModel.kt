@@ -119,6 +119,8 @@ class AnalyticsViewModel @Inject constructor(
                     ChartPeriod.MONTHLY -> aggregateMonthly(countryFiltered)
                     ChartPeriod.WEEKLY -> aggregateWeekly(countryFiltered)
                 }
+                
+                _uiState.update { it.copy(bars = bars, isLoading = false) }
             }
         }
     }

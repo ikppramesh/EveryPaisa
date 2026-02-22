@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Everypaisa</string>
+    <string name="app_name">Every.Paisa</string>
     <string name="app_tagline">Every paisa accounted for</string>
     
     <!-- Navigation -->
