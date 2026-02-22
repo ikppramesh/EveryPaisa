@@ -5,7 +5,9 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -333,6 +335,7 @@ fun HomeScreenNew(
                             // Transaction List (filtered by selected bank)
                             items(filteredTxns) { transaction ->
                                 EnhancedTransactionCard(
+                                    transactionId = transaction.id,
                                     merchantName = transaction.merchantName,
                                     amount = transaction.amount,
                                     category = transaction.category,
@@ -346,7 +349,11 @@ fun HomeScreenNew(
                                     currency = transaction.currency,
                                     smsId = transaction.smsId,
                                     smsBody = transaction.smsBody,
-                                    smsSender = transaction.smsSender
+                                    smsSender = transaction.smsSender,
+                                    isAtmWithdrawal = transaction.isAtmWithdrawal,
+                                    isInterAccountTransfer = transaction.isInterAccountTransfer,
+                                    onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
+                                    onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
                                 )
                             }
                         }
@@ -924,8 +931,10 @@ fun QuickStatsRow(totalSpent: BigDecimal, transactionCount: Int) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EnhancedTransactionCard(
+    transactionId: Long = 0L,
     merchantName: String,
     amount: BigDecimal,
     category: String,
@@ -937,7 +946,11 @@ fun EnhancedTransactionCard(
     currency: String = "INR",
     smsId: Long? = null,
     smsBody: String? = null,
-    smsSender: String? = null
+    smsSender: String? = null,
+    isAtmWithdrawal: Boolean = false,
+    isInterAccountTransfer: Boolean = false,
+    onMarkAsAtm: (Long, Boolean) -> Unit = { _, _ -> },
+    onMarkAsInterAccount: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val isExpense = transactionType == TransactionType.EXPENSE
@@ -945,13 +958,66 @@ fun EnhancedTransactionCard(
     val currencySymbol = CurrencySummary.getCurrencySymbol(currency)
     
     var showSmsDialog by remember { mutableStateOf(false) }
+    var showMarkMenu by remember { mutableStateOf(false) }
     
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { showMarkMenu = true }
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = when {
+                isAtmWithdrawal -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f)
+                isInterAccountTransfer -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            }
         )
     ) {
+        // Long-press context menu
+        DropdownMenu(
+            expanded = showMarkMenu,
+            onDismissRequest = { showMarkMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.LocalAtm,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (isAtmWithdrawal) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isAtmWithdrawal) "Unmark ATM Withdrawal" else "Mark as ATM Withdrawal")
+                    }
+                },
+                onClick = {
+                    onMarkAsAtm(transactionId, !isAtmWithdrawal)
+                    showMarkMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.SwapHoriz,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (isInterAccountTransfer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isInterAccountTransfer) "Unmark Inter-account Transfer" else "Mark as Inter-account Transfer")
+                    }
+                },
+                onClick = {
+                    onMarkAsInterAccount(transactionId, !isInterAccountTransfer)
+                    showMarkMenu = false
+                }
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -999,6 +1065,63 @@ fun EnhancedTransactionCard(
                         color = getCategoryColor(category),
                         fontWeight = FontWeight.Medium
                     )
+
+                    // ATM / Inter-account badges
+                    if (isAtmWithdrawal || isInterAccountTransfer) {
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (isAtmWithdrawal) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.tertiaryContainer
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.LocalAtm,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(10.dp),
+                                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            "ATM",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                            if (isInterAccountTransfer) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.SwapHoriz,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(10.dp),
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            "Transfer",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     

@@ -126,9 +126,11 @@ class HomeViewModel @Inject constructor(
         
         val currencySummaries = byCurrency.map { (currency, txns) ->
             val income = txns
+                .filter { !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.CREDIT }
                 .sumOf { it.amount }
             val expenses = txns
+                .filter { !it.isAtmWithdrawal && !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.EXPENSE }
                 .sumOf { it.amount }
             
@@ -177,6 +179,18 @@ class HomeViewModel @Inject constructor(
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
             transactionRepository.deleteTransaction(id)
+        }
+    }
+
+    fun markTransactionAsAtm(id: Long, flag: Boolean) {
+        viewModelScope.launch {
+            transactionRepository.markAsAtmWithdrawal(id, flag)
+        }
+    }
+
+    fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
+        viewModelScope.launch {
+            transactionRepository.markAsInterAccountTransfer(id, flag)
         }
     }
 }

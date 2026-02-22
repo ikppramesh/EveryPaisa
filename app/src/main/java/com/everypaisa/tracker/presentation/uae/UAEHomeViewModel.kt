@@ -9,6 +9,7 @@ import com.everypaisa.tracker.domain.model.*
 import com.everypaisa.tracker.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -61,9 +62,11 @@ class UAEHomeViewModel @Inject constructor(
         
         val currencySummaries = byCurrency.map { (currency, txns) ->
             val income = txns
+                .filter { !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.CREDIT }
                 .sumOf { it.amount }
             val expenses = txns
+                .filter { !it.isAtmWithdrawal && !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.EXPENSE }
                 .sumOf { it.amount }
             
@@ -97,6 +100,14 @@ class UAEHomeViewModel @Inject constructor(
     
     fun goToNextPeriod() {
         _selectedPeriod.value = _selectedPeriod.value.next()
+    }
+
+    fun markTransactionAsAtm(id: Long, flag: Boolean) {
+        viewModelScope.launch { transactionRepository.markAsAtmWithdrawal(id, flag) }
+    }
+
+    fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
+        viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
     }
 }
 

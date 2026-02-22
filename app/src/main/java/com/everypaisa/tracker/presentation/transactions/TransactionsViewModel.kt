@@ -8,6 +8,7 @@ import com.everypaisa.tracker.domain.model.Period
 import com.everypaisa.tracker.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -81,6 +82,14 @@ class TransactionsViewModel @Inject constructor(
     
     fun search(query: String) {
         _searchQuery.value = query
+    }
+
+    fun markTransactionAsAtm(id: Long, flag: Boolean) {
+        viewModelScope.launch { transactionRepository.markAsAtmWithdrawal(id, flag) }
+    }
+
+    fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
+        viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
     }
 }
 

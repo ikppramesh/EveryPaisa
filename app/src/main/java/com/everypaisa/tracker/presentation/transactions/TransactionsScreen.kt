@@ -1,5 +1,7 @@
 package com.everypaisa.tracker.presentation.transactions
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -207,6 +209,7 @@ fun TransactionsScreen(
                         ) {
                             items(state.transactions) { transaction ->
                                 TransactionItem(
+                                    transactionId = transaction.id,
                                     merchantName = transaction.merchantName,
                                     amount = transaction.amount,
                                     category = transaction.category,
@@ -217,6 +220,10 @@ fun TransactionsScreen(
                                     bankName = transaction.bankName,
                                     smsBody = transaction.smsBody,
                                     smsSender = transaction.smsSender,
+                                    isAtmWithdrawal = transaction.isAtmWithdrawal,
+                                    isInterAccountTransfer = transaction.isInterAccountTransfer,
+                                    onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
+                                    onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) },
                                     onClick = { onTransactionClick(transaction.id) }
                                 )
                             }
@@ -228,8 +235,10 @@ fun TransactionsScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionItem(
+    transactionId: Long = 0L,
     merchantName: String,
     amount: java.math.BigDecimal,
     category: String,
@@ -238,6 +247,10 @@ fun TransactionItem(
     bankName: String? = null,
     smsBody: String? = null,
     smsSender: String? = null,
+    isAtmWithdrawal: Boolean = false,
+    isInterAccountTransfer: Boolean = false,
+    onMarkAsAtm: (Long, Boolean) -> Unit = { _, _ -> },
+    onMarkAsInterAccount: (Long, Boolean) -> Unit = { _, _ -> },
     onClick: () -> Unit
 ) {
     val isExpense = transactionType == TransactionType.EXPENSE
@@ -248,11 +261,45 @@ fun TransactionItem(
         else -> MaterialTheme.colorScheme.onSurface
     }
     var showSmsDialog by remember { mutableStateOf(false) }
+    var showMarkMenu by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = { showMarkMenu = true }),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isAtmWithdrawal -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f)
+                isInterAccountTransfer -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)
+                else -> MaterialTheme.colorScheme.surface
+            }
+        )
     ) {
+        DropdownMenu(
+            expanded = showMarkMenu,
+            onDismissRequest = { showMarkMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocalAtm, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isAtmWithdrawal) "Unmark ATM Withdrawal" else "Mark as ATM Withdrawal")
+                    }
+                },
+                onClick = { onMarkAsAtm(transactionId, !isAtmWithdrawal); showMarkMenu = false }
+            )
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isInterAccountTransfer) "Unmark Inter-account Transfer" else "Mark as Inter-account Transfer")
+                    }
+                },
+                onClick = { onMarkAsInterAccount(transactionId, !isInterAccountTransfer); showMarkMenu = false }
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -271,6 +318,45 @@ fun TransactionItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (isAtmWithdrawal || isInterAccountTransfer) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (isAtmWithdrawal) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(Icons.Default.LocalAtm, null, modifier = Modifier.size(10.dp),
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("ATM", style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                        if (isInterAccountTransfer) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(Icons.Default.SwapHoriz, null, modifier = Modifier.size(10.dp),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Transfer", style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // SMS icon

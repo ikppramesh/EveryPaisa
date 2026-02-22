@@ -10,6 +10,7 @@ import com.everypaisa.tracker.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -98,9 +99,11 @@ class RegionalHomeViewModel @Inject constructor(
         val byCurrency = transactions.groupBy { it.currency }
         val summaries = byCurrency.map { (currency, txns) ->
             val income = txns
+                .filter { !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.CREDIT }
                 .sumOf { it.amount }
             val expenses = txns
+                .filter { !it.isAtmWithdrawal && !it.isInterAccountTransfer }
                 .filter { it.transactionType == TransactionType.EXPENSE }
                 .sumOf { it.amount }
             CurrencySummary(
@@ -138,6 +141,14 @@ class RegionalHomeViewModel @Inject constructor(
 
     fun setSelectedBank(bank: String?) {
         _selectedBank.value = bank
+    }
+
+    fun markTransactionAsAtm(id: Long, flag: Boolean) {
+        viewModelScope.launch { transactionRepository.markAsAtmWithdrawal(id, flag) }
+    }
+
+    fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
+        viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
     }
 }
 

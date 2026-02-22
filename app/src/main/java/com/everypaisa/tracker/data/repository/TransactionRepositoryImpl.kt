@@ -114,6 +114,14 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun restoreTransaction(id: Long) {
         transactionDao.restore(id)
     }
+
+    override suspend fun markAsAtmWithdrawal(id: Long, flag: Boolean) {
+        transactionDao.markAsAtmWithdrawal(id, flag)
+    }
+
+    override suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean) {
+        transactionDao.markAsInterAccountTransfer(id, flag)
+    }
     
     override suspend fun getTransactionsByAmountRange(
         minAmount: Double,

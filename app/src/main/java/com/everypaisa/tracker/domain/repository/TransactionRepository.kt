@@ -21,6 +21,8 @@ interface TransactionRepository {
     suspend fun updateTransaction(transaction: TransactionEntity)
     suspend fun deleteTransaction(id: Long)
     suspend fun restoreTransaction(id: Long)
+    suspend fun markAsAtmWithdrawal(id: Long, flag: Boolean)
+    suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean)
     suspend fun getTransactionsByAmountRange(minAmount: Double, maxAmount: Double, afterDate: Long): List<TransactionEntity>
     suspend fun countDuplicatesInWindow(amount: java.math.BigDecimal, bankName: String, startTime: Long, endTime: Long): Int
 }

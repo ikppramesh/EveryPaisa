@@ -63,7 +63,15 @@ data class TransactionEntity(
     val fromAccount: String? = null,
     
     @ColumnInfo(name = "to_account")
-    val toAccount: String? = null
+    val toAccount: String? = null,
+
+    /** True when this transaction is an ATM cash withdrawal (excluded from expense totals) */
+    @ColumnInfo(name = "is_atm_withdrawal")
+    val isAtmWithdrawal: Boolean = false,
+
+    /** True when this is a transfer between the user's own accounts (excluded from income & expense totals) */
+    @ColumnInfo(name = "is_inter_account_transfer")
+    val isInterAccountTransfer: Boolean = false
 )
 
 enum class TransactionType {

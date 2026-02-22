@@ -45,6 +45,8 @@ interface TransactionDao {
     @Query("""
         SELECT SUM(amount) FROM transactions
         WHERE is_deleted = 0 AND transaction_type = 'EXPENSE'
+        AND is_atm_withdrawal = 0
+        AND is_inter_account_transfer = 0
         AND date_time BETWEEN :startDate AND :endDate
     """)
     fun getTotalExpenses(startDate: Long, endDate: Long): Flow<BigDecimal?>
@@ -52,6 +54,7 @@ interface TransactionDao {
     @Query("""
         SELECT SUM(amount) FROM transactions
         WHERE is_deleted = 0 AND transaction_type IN ('INCOME', 'CREDIT')
+        AND is_inter_account_transfer = 0
         AND date_time BETWEEN :startDate AND :endDate
     """)
     fun getTotalIncome(startDate: Long, endDate: Long): Flow<BigDecimal?>
@@ -84,6 +87,12 @@ interface TransactionDao {
     
     @Query("UPDATE transactions SET is_deleted = 0 WHERE id = :id")
     suspend fun restore(id: Long)
+
+    @Query("UPDATE transactions SET is_atm_withdrawal = :flag WHERE id = :id")
+    suspend fun markAsAtmWithdrawal(id: Long, flag: Boolean)
+
+    @Query("UPDATE transactions SET is_inter_account_transfer = :flag WHERE id = :id")
+    suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean)
     
     @Query("DELETE FROM transactions WHERE is_deleted = 1")
     suspend fun deleteSoftDeleted()
