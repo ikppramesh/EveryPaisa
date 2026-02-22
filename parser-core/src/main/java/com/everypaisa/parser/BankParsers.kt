@@ -8,7 +8,7 @@ import java.util.regex.Pattern
 // ──────────────────────────────────────────────────────────────────
 // Shared utility for all parsers
 // ──────────────────────────────────────────────────────────────────
-private object ParserUtils {
+internal object ParserUtils {
     
     fun extractCurrency(message: String): String {
         val lower = message.lowercase()
@@ -72,7 +72,17 @@ private object ParserUtils {
             "RUB\\s+[\\d,]+\\.?\\d*" to "RUB",
             "ZAR\\s+[\\d,]+\\.?\\d*" to "ZAR",
             "NGN\\s+[\\d,]+\\.?\\d*" to "NGN",
-            "ETB\\s+[\\d,]+\\.?\\d*" to "ETB"
+            "ETB\\s+[\\d,]+\\.?\\d*" to "ETB",
+            "MXN\\s+[\\d,]+\\.?\\d*" to "MXN",
+            "ARS\\s+[\\d,]+\\.?\\d*" to "ARS",
+            "CLP\\s+[\\d,]+\\.?\\d*" to "CLP",
+            "COP\\s+[\\d,]+\\.?\\d*" to "COP",
+            "TWD\\s+[\\d,]+\\.?\\d*" to "TWD",
+            "KES\\s+[\\d,]+\\.?\\d*" to "KES",
+            "EGP\\s+[\\d,]+\\.?\\d*" to "EGP",
+            "MMK\\s+[\\d,]+\\.?\\d*" to "MMK",
+            "KHR\\s+[\\d,]+\\.?\\d*" to "KHR",
+            "LAK\\s+[\\d,]+\\.?\\d*" to "LAK"
         )
         
         for ((pattern, currency) in codeWithAmountPatterns) {
@@ -130,7 +140,9 @@ private object ParserUtils {
             "real" to "BRL",
             "rand" to "ZAR",
             "naira" to "NGN",
-            "birr" to "ETB"
+            "birr" to "ETB",
+            "shilling" to "KES",
+            "dirham" to "AED"
         )
         
         for ((pattern, currency) in currencyPatterns) {

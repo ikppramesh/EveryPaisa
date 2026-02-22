@@ -550,7 +550,8 @@ fun PeriodNavigationBar(
 fun MultiCurrencySummaryCard(
     multiCurrencySummary: MultiCurrencySummary,
     period: String,
-    periodType: DashboardPeriod = DashboardPeriod.MONTHLY
+    periodType: DashboardPeriod = DashboardPeriod.MONTHLY,
+    primaryLabel: String = "🇮🇳 Indian"
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -580,7 +581,7 @@ fun MultiCurrencySummaryCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            "🇮🇳 Indian",
+                            primaryLabel,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         )
@@ -896,7 +897,7 @@ fun HeroSummaryCard(
 }
 
 @Composable
-fun QuickStatsRow(totalSpent: BigDecimal, transactionCount: Int) {
+fun QuickStatsRow(totalSpent: BigDecimal, transactionCount: Int, currencySymbol: String = "₹") {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -944,7 +945,7 @@ fun QuickStatsRow(totalSpent: BigDecimal, transactionCount: Int) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "₹${String.format("%.0f", totalSpent.toDouble())}",
+                    "$currencySymbol${String.format("%.2f", totalSpent.toDouble())}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer

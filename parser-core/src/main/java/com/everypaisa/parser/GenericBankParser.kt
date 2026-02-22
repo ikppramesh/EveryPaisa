@@ -2,7 +2,6 @@ package com.everypaisa.parser
 
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
 /**
@@ -11,26 +10,16 @@ import java.util.regex.Pattern
  */
 class GenericBankParser : BankParser {
     
-    private val amountPatterns = listOf(
-        // Multi-currency patterns
-        Pattern.compile("AED\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("USD\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("EUR\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("GBP\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        // INR patterns
-        Pattern.compile("(?:Rs\\.?|INR|₹)\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("amt\\s*(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("amount\\s*(?:of\\s*)?(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("txn\\s*(?:of\\s*)?(?:Rs\\.?|INR|₹)?\\s*([\\d,]+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
-    )
-    
     // Debit keywords — money going OUT
     private val debitKeywords = listOf(
         "debited", "debit", "spent", "withdrawn", "purchase",
         "charged", "used at", "deducted", "sent to", "txn of",
         "transaction of", "your txn", "payment made", "paid to",
         "payment done", "amount paid", "using",
-        "for aed", "for usd", "for eur", "for gbp"
+        "for aed", "for usd", "for eur", "for gbp",
+        // International POS / card transaction patterns
+        "pos txn", "pos ", "card txn", "card payment",
+        "online txn", " txn ", "txn at"
     )
 
     // Strong credit keywords — money definitely coming IN (high confidence)
@@ -38,19 +27,21 @@ class GenericBankParser : BankParser {
         "credited to your", "credited to acct", "credited to a/c",
         "credited in your", "amount credited", "has been credited",
         "salary credited", "cashback credited", "refund credited",
-        "interest credited", "reward credited", "credited by"
+        "interest credited", "reward credited", "credited by",
+        "direct deposit", "payid transfer", "inward transfer"
     )
 
     // Weak credit keywords — may appear in debit SMS too
     private val weakCreditKeywords = listOf(
         "received", "deposited", "refund", "cashback", "reversed",
-        "credit to your", "credited your"
+        "credit to your", "credited your", "transfer received",
+        "deposit received", "incoming transfer"
     )
     
     override fun canParse(sender: String, message: String): Boolean {
         val messageLower = message.lowercase()
 
-        val hasAmount = amountPatterns.any { it.matcher(message).find() }
+        val hasAmount = ParserUtils.extractAmount(message) != null
 
         val hasTransactionKeyword = debitKeywords.any { messageLower.contains(it) } ||
                 strongCreditKeywords.any { messageLower.contains(it) } ||
@@ -62,12 +53,16 @@ class GenericBankParser : BankParser {
                 messageLower.contains("xx") ||
                 messageLower.contains("upi")
 
-        return hasAmount && hasTransactionKeyword && hasAccountRef
+        // For international SMS (e.g. LKR, MXN, CAD, JPY, CNY, AUD) the currency code
+        // itself is a strong enough identifier — no account ref required.
+        val hasExplicitForeignCurrency = ParserUtils.extractCurrency(message) != "INR"
+
+        return hasAmount && hasTransactionKeyword && (hasAccountRef || hasExplicitForeignCurrency)
     }
     
     override fun parse(sender: String, message: String): ParsedTransaction? {
         try {
-            val amount = extractAmount(message) ?: return null
+            val amount = ParserUtils.extractAmount(message) ?: return null
             
             // Skip very large amounts likely misparse (e.g., balance statements)
             if (amount > BigDecimal("5000000")) return null
@@ -77,7 +72,7 @@ class GenericBankParser : BankParser {
             val accountLast4 = extractAccountNumber(message)
             val cardLast4 = extractCardNumber(message)
             val paymentMethod = detectPaymentMethod(message)
-            val currency = extractCurrency(message)
+            val currency = ParserUtils.extractCurrency(message)
             
             return ParsedTransaction(
                 amount = amount,
@@ -93,22 +88,6 @@ class GenericBankParser : BankParser {
         } catch (e: Exception) {
             return null
         }
-    }
-    
-    private fun extractAmount(message: String): BigDecimal? {
-        for (pattern in amountPatterns) {
-            val matcher = pattern.matcher(message)
-            if (matcher.find()) {
-                val amountStr = matcher.group(1)?.replace(",", "") ?: continue
-                return try {
-                    val amt = BigDecimal(amountStr)
-                    if (amt > BigDecimal.ZERO) amt else null
-                } catch (e: Exception) {
-                    continue
-                }
-            }
-        }
-        return null
     }
     
     private fun determineTransactionType(message: String): TransactionType {
@@ -254,15 +233,5 @@ class GenericBankParser : BankParser {
         return null
     }
     
-    private fun extractCurrency(message: String): String {
-        val lower = message.lowercase()
-        return when {
-            lower.contains("aed") || lower.contains("dirham") || lower.contains("د.إ") -> "AED"
-            lower.contains("usd") || lower.contains("dollar") && !lower.contains("australian") -> "USD"
-            lower.contains("eur") || lower.contains("euro") || lower.contains("€") -> "EUR"
-            lower.contains("gbp") || lower.contains("pound") || lower.contains("£") -> "GBP"
-            lower.contains("dubai") || lower.contains("uae") -> "AED"
-            else -> "INR"
-        }
-    }
+
 }

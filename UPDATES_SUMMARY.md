@@ -1,8 +1,66 @@
 # 🌍 EveryPaisa Multi-Currency Update - Complete Summary
 
 **Date:** February 22, 2026  
-**Version:** 2.2.1  
+**Version:** 2.2.2  
 **Contact:** every.paisa.app@gmail.com
+
+---
+
+## v2.2.2 — Other🌐 Tab, Currency Symbols, Parser Overhaul
+
+**Date:** February 22, 2026
+
+### 1. "Other" 🌐 Tab for Unmatched Currencies
+
+- Added `TabsConfig.kt`: defines `countryTabs` list (India, UAE, USA, Europe, UK, Singapore, Australia, Canada) and `tabCurrenciesSet()` helper
+- Added `MainTabsViewModel.kt`: observes `getDistinctCurrencies()` (all-time), computes `unmatchedCurrencies` (currencies not in any tab), builds `visibleTabs` dynamically — appends 🌐 Other tab after Canada when unmatched currencies exist
+- Tabs only show when they have current-month transactions; Other tab appears based on all-time unmatched currencies
+
+### 2. Crash Fix: IndexOutOfBoundsException
+
+- `MainScreenWithTabs.kt`: Replaced async `LaunchedEffect` tab-reset (race condition) with synchronous `safeIndex = selectedTab.coerceIn(0, tabsList.size - 1)`. Used `safeIndex` for `selectedTabIndex`, `selected =`, and `current =` everywhere.
+
+### 3. Strict Per-Tab Currency Filtering
+
+- `MainScreenWithTabs.kt`: Removed special-case `HomeScreenNew` for India. ALL tabs (including India) now use `RegionalHomeScreen` which strictly filters by `current.currencies` — India shows only INR, UAE shows only AED/SAR/QAR etc.
+
+### 4. GenericBankParser Overhaul
+
+- `BankParsers.kt`: Changed `private object ParserUtils` → `internal object ParserUtils`
+- Added MXN, ARS, CLP, COP, TWD, KES, EGP, MMK, KHR, LAK to `codeWithAmountPatterns` in `extractCurrency()`
+- Added "shilling" → KES, "dirham" → AED to keyword patterns
+- `GenericBankParser.kt`: Removed its own limited `extractCurrency()` (defaulted everything to INR) and `amountPatterns`; now delegates to `ParserUtils.extractCurrency()` and `ParserUtils.extractAmount()` which handle 30+ currencies
+- Added `hasExplicitForeignCurrency` to `canParse()` — international SMS (LKR, MXN, CAD, JPY, CNY, AUD etc.) no longer require account reference if currency is explicitly detected
+- Added new keywords: `"pos txn"`, `"pos "`, `"card txn"`, `"card payment"`, `"online txn"`, `" txn "`, `"txn at"` to debitKeywords
+- Added `"direct deposit"`, `"payid transfer"`, `"inward transfer"` to strongCreditKeywords
+- Added `"transfer received"`, `"deposit received"`, `"incoming transfer"` to weakCreditKeywords
+
+### 5. Correct Currency Symbol in Total Spend Tile
+
+- `HomeScreenNew.kt`: `QuickStatsRow` now accepts `currencySymbol: String = "₹"` parameter; displays `"$currencySymbol${format}"` instead of hardcoded ₹
+- `RegionalHomeScreen.kt`: Derives `primaryCurrency` from `filteredSummary.inrSummary?.currency` and calls `CurrencySummary.getCurrencySymbol()`, passes result as `currencySymbol` to `QuickStatsRow`
+- `UAEHomeScreen.kt`: Same fix — passes `currencySymbol` from `inrSummary?.currencySymbol`
+
+### 6. Correct Flag/Label in Net Balance Tile (MultiCurrencySummaryCard)
+
+- `HomeScreenNew.kt`: `MultiCurrencySummaryCard` now accepts `primaryLabel: String = "🇮🇳 Indian"` parameter; replaces hardcoded `"🇮🇳 Indian"` text so UAE shows 🇦🇪, USA shows 🇺🇸, etc.
+- `RegionalHomeScreen.kt`: Passes `primaryLabel = "$flag $regionName ($primaryCurrencyCode)"` so each tab shows its own flag and name
+
+### Files Changed
+
+**Modified:**
+- `app/src/main/java/com/everypaisa/tracker/navigation/MainScreenWithTabs.kt`
+- `app/src/main/java/com/everypaisa/tracker/presentation/home/HomeScreenNew.kt`
+- `app/src/main/java/com/everypaisa/tracker/presentation/regional/RegionalHomeScreen.kt`
+- `app/src/main/java/com/everypaisa/tracker/presentation/uae/UAEHomeScreen.kt`
+- `parser-core/src/main/java/com/everypaisa/parser/BankParsers.kt`
+- `parser-core/src/main/java/com/everypaisa/parser/GenericBankParser.kt`
+- `app/src/main/java/com/everypaisa/tracker/data/repository/TransactionRepositoryImpl.kt`
+- `app/src/main/java/com/everypaisa/tracker/domain/repository/TransactionRepository.kt`
+
+**New:**
+- `app/src/main/java/com/everypaisa/tracker/navigation/MainTabsViewModel.kt`
+- `app/src/main/java/com/everypaisa/tracker/navigation/TabsConfig.kt`
 
 ---
 
@@ -66,7 +124,7 @@
 - Updated title: "Multi-Currency Expense Tracker System Architecture"
 - Added version to 2.0
 - Included supported regions: 🇮🇳 India | 🇦🇪 UAE | 🇺🇸 USA | 🇬🇧 UK | 🇸🇦 Saudi Arabia | Global
-- Added currencies: "30+ (AED, INR, USD, SAR, EUR, GBP, JPY, CNY, AUD, CAD, etc.)"
+- Added currencies: "30+ (AED, INR, USD, SAR, EUR, GBP, JPY, CNY, AUD, etc.)"
 - Added banks: "40+ (Indian & International)"
 
 #### 5. **TEST_TRANSACTIONS.md** (NEW FILE - 400+ lines)
@@ -291,5 +349,5 @@ The app is production-ready for multi-region, multi-currency expense tracking wi
 ---
 
 **Last Updated:** February 22, 2026  
-**Documentation Version:** 2.0  
-**App Version:** 2.0.0
+**Documentation Version:** 2.2.2  
+**App Version:** 2.2.2

@@ -122,6 +122,10 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean) {
         transactionDao.markAsInterAccountTransfer(id, flag)
     }
+
+    override fun getDistinctCurrencies(): kotlinx.coroutines.flow.Flow<List<String>> {
+        return transactionDao.getDistinctCurrencies()
+    }
     
     override suspend fun getTransactionsByAmountRange(
         minAmount: Double,

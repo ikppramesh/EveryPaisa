@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.everypaisa.tracker.domain.model.CurrencySummary
 import com.everypaisa.tracker.presentation.home.BankFilterChips
 import com.everypaisa.tracker.presentation.home.EnhancedTransactionCard
 import com.everypaisa.tracker.presentation.home.MultiCurrencySummaryCard
@@ -82,10 +83,15 @@ fun RegionalHomeScreen(
 
                 // Multi-currency summary card (using filtered summary)
                 item {
+                    // Label shown for the primary currency block in the summary card
+                    val primaryCurrencyCode = filteredSummary.inrSummary?.currency
+                        ?: currencies.firstOrNull() ?: "INR"
+                    val primaryLabel = "$flag $regionName ($primaryCurrencyCode)"
                     MultiCurrencySummaryCard(
                         multiCurrencySummary = filteredSummary,
                         period = state.currentPeriod.format(),
-                        periodType = state.currentPeriod.type
+                        periodType = state.currentPeriod.type,
+                        primaryLabel = primaryLabel
                     )
                 }
                 
@@ -103,13 +109,19 @@ fun RegionalHomeScreen(
                     }
                 }
                 
-                // Quick Stats Row (using filtered summary)
+                // Quick Stats Row (using filtered summary with correct currency symbol)
                 item {
                     val totalExpenses = filteredSummary.inrSummary?.totalExpenses ?: java.math.BigDecimal.ZERO
                     val transactionCount = filteredTxns.size
+                    // Derive symbol from the primary currency of this tab
+                    val primaryCurrency = filteredSummary.inrSummary?.currency
+                        ?: currencies.firstOrNull()
+                        ?: "INR"
+                    val currencySymbol = CurrencySummary.getCurrencySymbol(primaryCurrency)
                     com.everypaisa.tracker.presentation.home.QuickStatsRow(
                         totalSpent = totalExpenses,
-                        transactionCount = transactionCount
+                        transactionCount = transactionCount,
+                        currencySymbol = currencySymbol
                     )
                 }
 

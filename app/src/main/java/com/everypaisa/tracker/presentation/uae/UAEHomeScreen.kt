@@ -83,9 +83,11 @@ fun UAEHomeScreen(
                     item {
                         val totalExpenses = state.multiCurrencySummary.inrSummary?.totalExpenses ?: java.math.BigDecimal.ZERO
                         val transactionCount = state.transactions.size
+                        val currencySymbol = state.multiCurrencySummary.inrSummary?.currencySymbol ?: "د.إ"
                         QuickStatsRow(
                             totalSpent = totalExpenses,
-                            transactionCount = transactionCount
+                            transactionCount = transactionCount,
+                            currencySymbol = currencySymbol
                         )
                     }
                     

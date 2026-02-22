@@ -21,11 +21,12 @@ import androidx.core.content.ContextCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.everypaisa.tracker.presentation.home.HomeScreenNew
 import com.everypaisa.tracker.presentation.regional.RegionalHomeScreen
 import com.everypaisa.tracker.worker.OptimizedSmsReaderWorker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
 
 /**
  * Add a new country here — that's all you need.
@@ -36,66 +37,8 @@ import kotlinx.coroutines.launch
  * @param currencies  All accepted currency codes (first = primary for summary card)
  * @param bankHint    Sample banks shown on the empty-state card
  */
-data class CountryTab(
-    val flag: String,
-    val name: String,
-    val currencies: Set<String>,
-    val bankHint: String = ""
-)
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 👇 ADD NEW COUNTRIES BY APPENDING TO THIS LIST — nothing else to change
-// ─────────────────────────────────────────────────────────────────────────────
-private val countryTabs = listOf(
-    CountryTab(
-        flag = "🇮🇳",
-        name = "India",
-        currencies = linkedSetOf("INR"),
-        bankHint = "SBI • HDFC • ICICI • Axis • Kotak"
-    ),
-    CountryTab(
-        flag = "🇦🇪",
-        name = "UAE",
-        currencies = linkedSetOf("AED", "SAR", "QAR", "OMR", "KWD", "BHD"),
-        bankHint = "Emirates NBD • ADCB • FAB • Mashreq"
-    ),
-    CountryTab(
-        flag = "🇺🇸",
-        name = "USA",
-        currencies = linkedSetOf("USD"),
-        bankHint = "Chase • Bank of America • Wells Fargo"
-    ),
-    CountryTab(
-        flag = "🇪🇺",
-        name = "Europe",
-        currencies = linkedSetOf("EUR"),
-        bankHint = "HSBC • Deutsche Bank • BNP Paribas"
-    ),
-    CountryTab(
-        flag = "🇬🇧",
-        name = "UK",
-        currencies = linkedSetOf("GBP"),
-        bankHint = "Barclays • HSBC • Lloyds • NatWest"
-    ),
-    CountryTab(
-        flag = "🇸🇬",
-        name = "Singapore",
-        currencies = linkedSetOf("SGD"),
-        bankHint = "DBS • OCBC • UOB"
-    ),
-    CountryTab(
-        flag = "🇦🇺",
-        name = "Australia",
-        currencies = linkedSetOf("AUD"),
-        bankHint = "ANZ • Commonwealth • Westpac • NAB"
-    ),
-    CountryTab(
-        flag = "🇨🇦",
-        name = "Canada",
-        currencies = linkedSetOf("CAD"),
-        bankHint = "RBC • TD • Scotiabank • BMO"
-    ),
-)
+// Tab configuration is moved to TabsConfig.kt (countryTabs + helper)
+// We will append an "Other" globe tab dynamically based on DB currencies.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +47,18 @@ fun MainScreenWithTabs(
     onNavigateToTransactions: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val current = countryTabs[selectedTab]
+
+    val tabsVm: MainTabsViewModel = hiltViewModel()
+    val tabsList by tabsVm.visibleTabs.collectAsState()
+
+    // Show nothing until the first tab list is ready
+    if (tabsList.isEmpty()) return
+
+    // Clamp selectedTab synchronously in composition — no LaunchedEffect race condition.
+    // When the list shrinks (e.g. during/after scan) selectedTab may be stale; coerceIn
+    // ensures we always read a valid index without mutating state mid-composition.
+    val safeIndex = selectedTab.coerceIn(0, tabsList.size - 1)
+    val current = tabsList[safeIndex]
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -215,15 +169,15 @@ fun MainScreenWithTabs(
                 // On narrow phones (< 380dp) show only flag emoji; wider screens show flag + name
                 val showTabLabel = screenWidthDp >= 380
                 ScrollableTabRow(
-                    selectedTabIndex = selectedTab,
+                    selectedTabIndex = safeIndex,
                     edgePadding = if (showTabLabel) 4.dp else 0.dp,
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.primary,
                     divider = {}
                 ) {
-                    countryTabs.forEachIndexed { index, tab ->
+                    tabsList.forEachIndexed { index, tab ->
                         Tab(
-                            selected = selectedTab == index,
+                            selected = safeIndex == index,
                             onClick = { selectedTab = index },
                             modifier = Modifier.height(if (showTabLabel) 56.dp else 44.dp)
                         ) {
@@ -240,7 +194,7 @@ fun MainScreenWithTabs(
                                     Text(
                                         tab.name,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (selectedTab == index)
+                                        color = if (safeIndex == index)
                                             MaterialTheme.colorScheme.primary
                                         else
                                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -266,22 +220,16 @@ fun MainScreenWithTabs(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (selectedTab) {
-                // India — uses the full HomeScreenNew (without its own top bar)
-                0 -> HomeScreenNew(
-                    showTopBar = false,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToTransactions = onNavigateToTransactions
-                )
-                // Every other country — uses the generic RegionalHomeScreen
-                else -> RegionalHomeScreen(
-                    flag = current.flag,
-                    regionName = current.name,
-                    currencies = current.currencies,
-                    bankHint = current.bankHint,
-                    onNavigateToTransactions = onNavigateToTransactions
-                )
-            }
+            // All tabs — including India — use RegionalHomeScreen so each tab shows ONLY
+            // its own currencies (INR for India, USD for USA, etc.).
+            // The "Other" 🌐 tab shows every currency from SMS that doesn't match any tab.
+            RegionalHomeScreen(
+                flag = current.flag,
+                regionName = current.name,
+                currencies = current.currencies,
+                bankHint = current.bankHint,
+                onNavigateToTransactions = onNavigateToTransactions
+            )
         }
     }
 }
