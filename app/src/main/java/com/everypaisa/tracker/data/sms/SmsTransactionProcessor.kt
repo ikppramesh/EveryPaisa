@@ -46,11 +46,6 @@ class SmsTransactionProcessor @Inject constructor(
             "${Telephony.Sms.DATE} DESC"
         )
         
-        // keep track of every SMS id we saw; later we will soft‑delete any
-        // database entries whose sms_id is not in this set (i.e. user removed
-        // the message from their inbox).
-        val observedSmsIds = mutableSetOf<Long>()
-
         cursor?.use {
             val idIndex = it.getColumnIndex(Telephony.Sms._ID)
             val addressIndex = it.getColumnIndex(Telephony.Sms.ADDRESS)
@@ -62,7 +57,6 @@ class SmsTransactionProcessor @Inject constructor(
             while (it.moveToNext()) {
                 totalSmsCount++
                 val smsId = it.getLong(idIndex)
-                observedSmsIds += smsId
                 val sender = it.getString(addressIndex) ?: continue
                 val body = it.getString(bodyIndex) ?: continue
                 val dateMillis = it.getLong(dateIndex)
@@ -74,28 +68,6 @@ class SmsTransactionProcessor @Inject constructor(
                 val parsed = processMessage(sender, body, dateMillis, smsId)
                 if (parsed) parsedCount++
             }
-        }
-
-        // After processing all SMS entries, make sure we soft-delete any previously
-        // recorded transaction that came from an SMS which is no longer present in
-        // the device inbox.  This handles the “refresh not removing deleted SMS” bug.
-        val idsToKeep = observedSmsIds.toList()
-        Log.d(TAG, "🧠 Observed ${idsToKeep.size} SMS ids during scan")
-
-        try {
-            // log how many SMS transactions exist before cleanup (for diagnostics)
-            val beforeIds = transactionRepository.getAllSmsIds()
-            Log.d(TAG, "📦 ${beforeIds.size} SMS transactions stored before cleanup")
-
-            transactionRepository.markSmsTransactionsDeletedExcept(idsToKeep)
-
-            // optionally log remaining count after cleanup
-            val afterIds = transactionRepository.getAllSmsIds()
-            Log.d(TAG, "📭 ${afterIds.size} SMS transactions stored after cleanup")
-
-            Log.d(TAG, "🗑️ Cleaned up stale SMS transactions")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to clean up stale SMS transactions: ${e.message}", e)
         }
         
         Log.d(TAG, "✅ SMS scan complete. Total: $totalSmsCount, Parsed: $parsedCount")
@@ -127,7 +99,14 @@ class SmsTransactionProcessor @Inject constructor(
         try {
             // Generate hash to avoid duplicates
             val hash = generateHash(parsedTxn.rawMessage)
-            
+
+            // If this SMS was already processed (active OR soft-deleted), skip it entirely.
+            // This prevents deleted transactions from reappearing on refresh.
+            if (transactionRepository.existsByHash(hash)) {
+                Log.d(TAG, "⏭️ Skipping already-processed SMS (hash exists): ${parsedTxn.merchantName} ${parsedTxn.amount}")
+                return false
+            }
+
             // Auto-categorize
             val category = categorizeMerchant(parsedTxn.merchantName, parsedTxn.transactionType)
             

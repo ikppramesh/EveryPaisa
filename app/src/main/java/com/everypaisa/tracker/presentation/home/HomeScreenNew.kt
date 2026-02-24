@@ -124,10 +124,7 @@ fun HomeScreenNew(
                     IconButton(onClick = {
                         isRefreshing = true
                         scope.launch {
-                            // perform an SMS scan; this will automatically update Room
-                            // and (because we added cleanup) also remove transactions
-                            // backed by messages the user deleted from their inbox.
-                            startScan()
+                            viewModel.refreshTransactions()
                             kotlinx.coroutines.delay(500)
                             isRefreshing = false
                         }
@@ -203,7 +200,7 @@ fun HomeScreenNew(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        Button(onClick = { startScan() }) {
+                        Button(onClick = { viewModel.refreshTransactions() }) {
                             Text("Try Again")
                         }
                     }

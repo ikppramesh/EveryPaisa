@@ -73,11 +73,14 @@ interface TransactionDao {
     """)
     fun getDistinctCurrencies(): Flow<List<String>>
     
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(transaction: TransactionEntity): Long
-    
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(transactions: List<TransactionEntity>): List<Long>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE transaction_hash = :hash")
+    suspend fun existsByHash(hash: String): Int
     
     @Update
     suspend fun update(transaction: TransactionEntity)
@@ -102,37 +105,6 @@ interface TransactionDao {
     
     @Query("SELECT * FROM transactions WHERE is_deleted = 0 ORDER BY date_time DESC")
     suspend fun getAllTransactionsSync(): List<TransactionEntity>
-
-    // ── SMS inbox synchronization helpers ─────────────────────────
-    /**
-     * Soft-delete any existing database transaction whose originating SMS is no longer
-     * present in the device inbox.  Transactions added manually (sms_id == null) are
-     * left untouched.
-     */
-    @Query("UPDATE transactions SET is_deleted = 1 WHERE sms_id IS NOT NULL AND sms_id NOT IN (:smsIds)")
-    suspend fun markSmsTransactionsDeletedExcept(smsIds: List<Long>)
-
-    /**
-     * Shortcut used when there are no SMS messages available (e.g. permission revoked).
-     * Marks all transactions created from SMS as deleted.
-     */
-    @Query("UPDATE transactions SET is_deleted = 1 WHERE sms_id IS NOT NULL")
-    suspend fun markAllSmsTransactionsDeleted()
-
-    /**
-     * Undo the above operation for the given list of SMS IDs.  Used when the
-     * observed inbox contains these messages; since we sometimes mark everything as
-     * deleted first, this query restores the ones that still exist.
-     */
-    @Query("UPDATE transactions SET is_deleted = 0 WHERE sms_id IN (:smsIds)")
-    suspend fun restoreSmsTransactions(smsIds: List<Long>)
-
-    /**
-     * Return all SMS-based transaction ids currently stored (whether deleted or not).
-     * Helps with diagnostics and cleanup logic.
-     */
-    @Query("SELECT sms_id FROM transactions WHERE sms_id IS NOT NULL")
-    suspend fun getAllSmsIds(): List<Long>
 
     @Query("""
         SELECT * FROM transactions

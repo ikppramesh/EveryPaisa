@@ -144,33 +144,7 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.countDuplicatesByAmountAndTime(amount, bankName, startTime, endTime)
     }
 
-    // SMS sync helpers
-    override suspend fun markSmsTransactionsDeletedExcept(smsIds: List<Long>) {
-        // SQLite limits the number of host parameters in a single query (usually 999).
-        // If the SMS inbox is large we can't safely pass the full list to a NOT IN
-        // clause, because the statement would fail and the cleanup would be skipped
-        // entirely (which is what the user reported).  To avoid this we take a two‑step
-        // approach:
-        //   1. mark *all* SMS‑derived transactions deleted
-        //   2. restore (undelete) only those whose IDs we still observe, processing the
-        //      kept set in chunks small enough to avoid the parameter limit.
-        if (smsIds.isEmpty()) {
-            transactionDao.markAllSmsTransactionsDeleted()
-            return
-        }
-
-        transactionDao.markAllSmsTransactionsDeleted()
-        val chunkSize = 800 // safe margin under 999
-        smsIds.chunked(chunkSize).forEach { chunk ->
-            transactionDao.restoreSmsTransactions(chunk)
-        }
-    }
-
-    override suspend fun markAllSmsTransactionsDeleted() {
-        transactionDao.markAllSmsTransactionsDeleted()
-    }
-
-    override suspend fun getAllSmsIds(): List<Long> {
-        return transactionDao.getAllSmsIds()
+    override suspend fun existsByHash(hash: String): Boolean {
+        return transactionDao.existsByHash(hash) > 0
     }
 }

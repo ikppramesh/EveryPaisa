@@ -11,6 +11,7 @@ import com.everypaisa.tracker.domain.model.DashboardPeriod
 import com.everypaisa.tracker.domain.model.MonthSummary
 import com.everypaisa.tracker.domain.model.MultiCurrencySummary
 import com.everypaisa.tracker.domain.model.Period
+import com.everypaisa.tracker.data.sms.SmsTransactionProcessor
 import com.everypaisa.tracker.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,7 +23,8 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val smsProcessor: SmsTransactionProcessor
 ) : ViewModel() {
     
     private val TAG = "HomeViewModel"
@@ -190,14 +192,12 @@ class HomeViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Historically this method triggered a data reload; nowadays the database is
-     * updated by the SMS scanner worker and all screens observe Room flows, so
-     * nothing needs to be done here.  UI layers may still call it after a scan
-     * completes just to keep the same call site.
-     */
     fun refreshTransactions() {
-        Log.d(TAG, "🔄 Refresh requested (no-op, Room auto‑updates)")
+        viewModelScope.launch {
+            Log.d(TAG, "🔄 Refresh requested — scanning SMS...")
+            smsProcessor.processAllSms()
+            Log.d(TAG, "✅ SMS scan complete, Room will auto-update UI")
+        }
     }
     
     fun deleteTransaction(id: Long) {
