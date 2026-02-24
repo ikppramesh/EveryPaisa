@@ -18,8 +18,8 @@ android {
         applicationId = "com.everypaisa.tracker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "2.2.1"
+        versionCode = 1
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
