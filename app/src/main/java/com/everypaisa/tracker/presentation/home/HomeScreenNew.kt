@@ -8,7 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -401,7 +402,20 @@ fun HomeScreenNew(
                                         isAtmWithdrawal = transaction.isAtmWithdrawal,
                                         isInterAccountTransfer = transaction.isInterAccountTransfer,
                                         onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
-                                        onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
+                                        onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) },
+                                        onDelete = { id ->
+                                            viewModel.deleteTransaction(id)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Transaction deleted",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) {
+                                                    viewModel.restoreTransaction(id)
+                                                }
+                                            }
+                                        }
                                     )
                                 }
                             }
@@ -1025,7 +1039,8 @@ fun EnhancedTransactionCard(
     isAtmWithdrawal: Boolean = false,
     isInterAccountTransfer: Boolean = false,
     onMarkAsAtm: (Long, Boolean) -> Unit = { _, _ -> },
-    onMarkAsInterAccount: (Long, Boolean) -> Unit = { _, _ -> }
+    onMarkAsInterAccount: (Long, Boolean) -> Unit = { _, _ -> },
+    onDelete: (Long) -> Unit = { _ -> }
 ) {
     val context = LocalContext.current
     val isExpense = transactionType == TransactionType.EXPENSE
@@ -1038,10 +1053,9 @@ fun EnhancedTransactionCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(
-                onClick = {},
-                onLongClick = { showMarkMenu = true }
-            ),
+            .pointerInput(Unit) {
+                detectTapGestures(onLongPress = { showMarkMenu = true })
+            },
         colors = CardDefaults.cardColors(
             containerColor = when {
                 isAtmWithdrawal -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f)
@@ -1088,6 +1102,24 @@ fun EnhancedTransactionCard(
                 },
                 onClick = {
                     onMarkAsInterAccount(transactionId, !isInterAccountTransfer)
+                    showMarkMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Delete Transaction", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                onClick = {
+                    onDelete(transactionId)
                     showMarkMenu = false
                 }
             )
