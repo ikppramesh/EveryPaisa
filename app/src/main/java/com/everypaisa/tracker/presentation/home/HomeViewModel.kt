@@ -206,6 +206,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun restoreTransaction(id: Long) {
+        viewModelScope.launch {
+            transactionRepository.restoreTransaction(id)
+        }
+    }
+
     fun markTransactionAsAtm(id: Long, flag: Boolean) {
         viewModelScope.launch {
             transactionRepository.markAsAtmWithdrawal(id, flag)

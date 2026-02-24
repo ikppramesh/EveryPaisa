@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -336,28 +337,73 @@ fun HomeScreenNew(
                             }
 
                             // Transaction List (filtered by selected bank)
-                            items(filteredTxns) { transaction ->
-                                EnhancedTransactionCard(
-                                    transactionId = transaction.id,
-                                    merchantName = transaction.merchantName,
-                                    amount = transaction.amount,
-                                    category = transaction.category,
-                                    dateTime = transaction.dateTime.format(
-                                        DateTimeFormatter.ofPattern("MMM dd, yyyy • hh:mm a")
-                                    ),
-                                    transactionType = transaction.transactionType,
-                                    bankName = transaction.bankName ?: "Unknown",
-                                    accountLast4 = transaction.accountLast4,
-                                    paymentMethod = transaction.description ?: "",
-                                    currency = transaction.currency,
-                                    smsId = transaction.smsId,
-                                    smsBody = transaction.smsBody,
-                                    smsSender = transaction.smsSender,
-                                    isAtmWithdrawal = transaction.isAtmWithdrawal,
-                                    isInterAccountTransfer = transaction.isInterAccountTransfer,
-                                    onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
-                                    onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
+                            items(filteredTxns, key = { it.id }) { transaction ->
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value == SwipeToDismissBoxValue.EndToStart) {
+                                            viewModel.deleteTransaction(transaction.id)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Transaction deleted",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) {
+                                                    viewModel.restoreTransaction(transaction.id)
+                                                }
+                                            }
+                                            true
+                                        } else false
+                                    }
                                 )
+                                val bgColor by animateColorAsState(
+                                    targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
+                                        Color(0xFFB00020) else Color.Transparent,
+                                    label = "swipeBg"
+                                )
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    enableDismissFromStartToEnd = false,
+                                    backgroundContent = {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(bgColor, RoundedCornerShape(12.dp))
+                                                .padding(end = 20.dp),
+                                            contentAlignment = Alignment.CenterEnd
+                                        ) {
+                                            if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Delete",
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    EnhancedTransactionCard(
+                                        transactionId = transaction.id,
+                                        merchantName = transaction.merchantName,
+                                        amount = transaction.amount,
+                                        category = transaction.category,
+                                        dateTime = transaction.dateTime.format(
+                                            DateTimeFormatter.ofPattern("MMM dd, yyyy • hh:mm a")
+                                        ),
+                                        transactionType = transaction.transactionType,
+                                        bankName = transaction.bankName ?: "Unknown",
+                                        accountLast4 = transaction.accountLast4,
+                                        paymentMethod = transaction.description ?: "",
+                                        currency = transaction.currency,
+                                        smsId = transaction.smsId,
+                                        smsBody = transaction.smsBody,
+                                        smsSender = transaction.smsSender,
+                                        isAtmWithdrawal = transaction.isAtmWithdrawal,
+                                        isInterAccountTransfer = transaction.isInterAccountTransfer,
+                                        onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
+                                        onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
+                                    )
+                                }
                             }
                         }
                     }
