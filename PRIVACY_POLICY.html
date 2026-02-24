@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EveryPaisa — Privacy Policy</title>
+  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:24px;color:#111}h1,h2{color:#0b3b66}p{line-height:1.5}code{background:#f4f4f4;padding:2px 6px;border-radius:4px}</style>
+</head>
+<body>
+  <h1>EveryPaisa — Privacy Policy</h1>
+  <p>Effective date: 24 February 2026</p>
+
+  <h2>Summary</h2>
+  <p>EveryPaisa is a privacy-first, on-device expense tracker. The app reads bank SMS messages on your device to automatically detect and record transactions. All processing and storage happens locally on your phone — we do not upload SMS content, transaction data, or any personally identifiable information to our servers.</p>
+
+  <h2>What data we access</h2>
+  <ul>
+    <li><strong>SMS messages:</strong> We request access to SMS only to detect bank transaction messages (permissions: <code>READ_SMS</code>, <code>RECEIVE_SMS</code>).</li>
+    <li><strong>Device authentication:</strong> We may use biometric APIs to unlock local features (permission: <code>USE_BIOMETRIC</code>), which uses the Android biometric framework; biometric data never leaves the device.</li>
+    <li><strong>Notifications:</strong> Notification permission is used to show app notifications (<code>POST_NOTIFICATIONS</code>).</li>
+  </ul>
+
+  <h2>How we use SMS data</h2>
+  <p>We parse SMS messages to extract transaction fields such as amount, merchant, date/time, and masked account/card identifiers (last 4 digits). Parsing, categorization, analytics, and storage occur entirely on-device. We create a SHA-256 hash of the raw message to detect duplicates; this hash is stored locally and is not transmitted anywhere.</p>
+
+  <h2>Data sharing</h2>
+  <p>We do not share SMS content, transaction data, or hashed identifiers with third parties. There are no analytics, advertising, or crash-reporting SDKs in the official builds. If you export data (CSV) using the app's export feature, that file is created on your device and can be shared by you manually.</p>
+
+  <h2>Storage & retention</h2>
+  <p>All data is stored locally in a Room database on your device. You can delete all stored data from the app at any time via Settings &gt; Delete Data. Exported CSV files are stored in your device's shared storage only when you explicitly export; the app does not upload these files.</p>
+
+  <h2>Security</h2>
+  <p>We use standard Android storage protections. The app generates SHA-256 hashes for deduplication; no encryption is used for network transmission because the app does not transmit data. If you enable biometric protection inside the app, biometric-based unlocking uses Android's secure biometric APIs; no biometric data is stored by EveryPaisa.</p>
+
+  <h2>Android permissions</h2>
+  <ul>
+    <li><code>READ_SMS</code>, <code>RECEIVE_SMS</code> — required to detect bank transaction SMS messages; core functionality.</li>
+    <li><code>USE_BIOMETRIC</code> — used for optional local authentication.</li>
+    <li><code>POST_NOTIFICATIONS</code> — used to display notifications on Android 13+.</li>
+  </ul>
+
+  <h2>Why SMS access is necessary</h2>
+  <p>EveryPaisa's primary feature is automatic transaction detection from bank SMS. Alternatives like manual entry or SMS Retriever API are unsuitable because bank transaction SMS vary across banks and often do not use a predictable one-time code flow; the app must read incoming or stored SMS to reliably detect and parse transactions.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>You may decline SMS permissions; the app will still work with manual import or manual transaction entry.</li>
+    <li>You can delete all stored data anytime from Settings.</li>
+    <li>If you export data, you control where that file is saved or shared.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>If you have questions about privacy, contact: <a href="mailto:hello@iramesh.com">hello@iramesh.com</a></p>
+
+  <hr />
+  <p>By using EveryPaisa you agree to the practices described in this policy.</p>
+</body>
+</html>
