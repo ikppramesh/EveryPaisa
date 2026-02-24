@@ -46,6 +46,11 @@ class SmsTransactionProcessor @Inject constructor(
             "${Telephony.Sms.DATE} DESC"
         )
         
+        // keep track of every SMS id we saw; later we will soft‑delete any
+        // database entries whose sms_id is not in this set (i.e. user removed
+        // the message from their inbox).
+        val observedSmsIds = mutableSetOf<Long>()
+
         cursor?.use {
             val idIndex = it.getColumnIndex(Telephony.Sms._ID)
             val addressIndex = it.getColumnIndex(Telephony.Sms.ADDRESS)
@@ -57,6 +62,7 @@ class SmsTransactionProcessor @Inject constructor(
             while (it.moveToNext()) {
                 totalSmsCount++
                 val smsId = it.getLong(idIndex)
+                observedSmsIds += smsId
                 val sender = it.getString(addressIndex) ?: continue
                 val body = it.getString(bodyIndex) ?: continue
                 val dateMillis = it.getLong(dateIndex)
@@ -68,6 +74,16 @@ class SmsTransactionProcessor @Inject constructor(
                 val parsed = processMessage(sender, body, dateMillis, smsId)
                 if (parsed) parsedCount++
             }
+        }
+
+        // After processing all SMS entries, make sure we soft-delete any previously
+        // recorded transaction that came from an SMS which is no longer present in
+        // the device inbox.  This handles the “refresh not removing deleted SMS” bug.
+        try {
+            transactionRepository.markSmsTransactionsDeletedExcept(observedSmsIds.toList())
+            Log.d(TAG, "🗑️ Cleaned up transactions for missing SMS (kept ${observedSmsIds.size} ids)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to clean up stale SMS transactions: ${e.message}", e)
         }
         
         Log.d(TAG, "✅ SMS scan complete. Total: $totalSmsCount, Parsed: $parsedCount")

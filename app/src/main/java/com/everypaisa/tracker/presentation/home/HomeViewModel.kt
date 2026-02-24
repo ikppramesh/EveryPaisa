@@ -190,8 +190,14 @@ class HomeViewModel @Inject constructor(
         }
     }
     
+    /**
+     * Historically this method triggered a data reload; nowadays the database is
+     * updated by the SMS scanner worker and all screens observe Room flows, so
+     * nothing needs to be done here.  UI layers may still call it after a scan
+     * completes just to keep the same call site.
+     */
     fun refreshTransactions() {
-        Log.d(TAG, "🔄 Refresh requested (Room auto-updates)")
+        Log.d(TAG, "🔄 Refresh requested (no-op, Room auto‑updates)")
     }
     
     fun deleteTransaction(id: Long) {

@@ -143,4 +143,17 @@ class TransactionRepositoryImpl @Inject constructor(
     ): Int {
         return transactionDao.countDuplicatesByAmountAndTime(amount, bankName, startTime, endTime)
     }
+
+    // SMS sync helpers
+    override suspend fun markSmsTransactionsDeletedExcept(smsIds: List<Long>) {
+        if (smsIds.isEmpty()) {
+            transactionDao.markAllSmsTransactionsDeleted()
+        } else {
+            transactionDao.markSmsTransactionsDeletedExcept(smsIds)
+        }
+    }
+
+    override suspend fun markAllSmsTransactionsDeleted() {
+        transactionDao.markAllSmsTransactionsDeleted()
+    }
 }

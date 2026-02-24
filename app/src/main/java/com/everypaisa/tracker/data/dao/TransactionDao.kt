@@ -103,6 +103,22 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE is_deleted = 0 ORDER BY date_time DESC")
     suspend fun getAllTransactionsSync(): List<TransactionEntity>
 
+    // ── SMS inbox synchronization helpers ─────────────────────────
+    /**
+     * Soft-delete any existing database transaction whose originating SMS is no longer
+     * present in the device inbox.  Transactions added manually (sms_id == null) are
+     * left untouched.
+     */
+    @Query("UPDATE transactions SET is_deleted = 1 WHERE sms_id IS NOT NULL AND sms_id NOT IN (:smsIds)")
+    suspend fun markSmsTransactionsDeletedExcept(smsIds: List<Long>)
+
+    /**
+     * Shortcut used when there are no SMS messages available (e.g. permission revoked).
+     * Marks all transactions created from SMS as deleted.
+     */
+    @Query("UPDATE transactions SET is_deleted = 1 WHERE sms_id IS NOT NULL")
+    suspend fun markAllSmsTransactionsDeleted()
+
     @Query("""
         SELECT * FROM transactions
         WHERE is_deleted = 0
