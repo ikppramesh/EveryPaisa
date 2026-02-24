@@ -26,5 +26,6 @@ interface TransactionRepository {
     suspend fun getTransactionsByAmountRange(minAmount: Double, maxAmount: Double, afterDate: Long): List<TransactionEntity>
     suspend fun countDuplicatesInWindow(amount: java.math.BigDecimal, bankName: String, startTime: Long, endTime: Long): Int
     suspend fun existsByHash(hash: String): Boolean
+    suspend fun removeOrphanedSmsTransactions(currentDeviceSmsIds: Set<Long>): Int
     fun getDistinctCurrencies(): Flow<List<String>>
 }

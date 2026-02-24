@@ -147,4 +147,18 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun existsByHash(hash: String): Boolean {
         return transactionDao.existsByHash(hash) > 0
     }
+
+    override suspend fun removeOrphanedSmsTransactions(currentDeviceSmsIds: Set<Long>): Int {
+        val dbRows = transactionDao.getActiveTransactionsWithSmsIds()
+        val orphanIds = dbRows
+            .filter { it.smsId !in currentDeviceSmsIds }
+            .map { it.id }
+        if (orphanIds.isNotEmpty()) {
+            // Room's IN clause has a limit; chunk to be safe
+            for (chunk in orphanIds.chunked(500)) {
+                transactionDao.softDeleteByIds(chunk)
+            }
+        }
+        return orphanIds.size
+    }
 }

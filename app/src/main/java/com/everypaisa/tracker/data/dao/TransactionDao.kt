@@ -5,6 +5,12 @@ import com.everypaisa.tracker.data.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
+/** Lightweight projection used only for SMS-orphan cleanup. */
+data class SmsIdRow(
+    val id: Long,
+    @ColumnInfo(name = "sms_id") val smsId: Long
+)
+
 @Dao
 interface TransactionDao {
     
@@ -81,6 +87,14 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE transaction_hash = :hash")
     suspend fun existsByHash(hash: String): Int
+
+    /** Returns (id, sms_id) for every active transaction that came from an SMS. */
+    @Query("SELECT id, sms_id FROM transactions WHERE is_deleted = 0 AND sms_id IS NOT NULL")
+    suspend fun getActiveTransactionsWithSmsIds(): List<SmsIdRow>
+
+    /** Soft-delete a batch of transaction row IDs in one query. */
+    @Query("UPDATE transactions SET is_deleted = 1 WHERE id IN (:ids)")
+    suspend fun softDeleteByIds(ids: List<Long>)
     
     @Update
     suspend fun update(transaction: TransactionEntity)

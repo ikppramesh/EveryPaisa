@@ -32,7 +32,8 @@ class SmsTransactionProcessor @Inject constructor(
         Log.d(TAG, "🚀 Starting SMS scan...")
         var totalSmsCount = 0
         var parsedCount = 0
-        
+        val deviceSmsIds = mutableSetOf<Long>()
+
         val cursor = context.contentResolver.query(
             Telephony.Sms.CONTENT_URI,
             arrayOf(
@@ -45,32 +46,39 @@ class SmsTransactionProcessor @Inject constructor(
             null,
             "${Telephony.Sms.DATE} DESC"
         )
-        
+
         cursor?.use {
             val idIndex = it.getColumnIndex(Telephony.Sms._ID)
             val addressIndex = it.getColumnIndex(Telephony.Sms.ADDRESS)
             val bodyIndex = it.getColumnIndex(Telephony.Sms.BODY)
             val dateIndex = it.getColumnIndex(Telephony.Sms.DATE)
-            
+
             Log.d(TAG, "📱 SMS cursor count: ${it.count}")
-            
+
             while (it.moveToNext()) {
                 totalSmsCount++
                 val smsId = it.getLong(idIndex)
+                deviceSmsIds.add(smsId)
                 val sender = it.getString(addressIndex) ?: continue
                 val body = it.getString(bodyIndex) ?: continue
                 val dateMillis = it.getLong(dateIndex)
-                
+
                 if (totalSmsCount <= 5) {
                     Log.d(TAG, "Sample SMS $totalSmsCount - Sender: $sender, Body: ${body.take(50)}...")
                 }
-                
+
                 val parsed = processMessage(sender, body, dateMillis, smsId)
                 if (parsed) parsedCount++
             }
         }
-        
-        Log.d(TAG, "✅ SMS scan complete. Total: $totalSmsCount, Parsed: $parsedCount")
+
+        // Remove transactions whose source SMS was deleted from the device inbox
+        val removed = transactionRepository.removeOrphanedSmsTransactions(deviceSmsIds)
+        if (removed > 0) {
+            Log.d(TAG, "🗑️ Removed $removed orphaned transaction(s) — SMS deleted from device")
+        }
+
+        Log.d(TAG, "✅ SMS scan complete. Total: $totalSmsCount, Parsed: $parsedCount, Removed: $removed")
         return parsedCount
     }
     
