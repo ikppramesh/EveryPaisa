@@ -201,8 +201,10 @@ class HomeViewModel @Inject constructor(
     }
     
     fun deleteTransaction(id: Long) {
+        Log.d(TAG, "🗑️ deleteTransaction called: id=$id")
         viewModelScope.launch {
             transactionRepository.deleteTransaction(id)
+            Log.d(TAG, "✅ deleteTransaction done: id=$id")
         }
     }
 

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import com.everypaisa.tracker.domain.model.CurrencySummary
 import com.everypaisa.tracker.presentation.home.BankFilterChips
 import com.everypaisa.tracker.presentation.home.EnhancedTransactionCard
@@ -42,7 +43,10 @@ fun RegionalHomeScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
+    Box(modifier = Modifier.fillMaxSize()) {
     when (val state = uiState) {
         is RegionalHomeUiState.Loading -> {
             Box(
@@ -169,7 +173,20 @@ fun RegionalHomeScreen(
                             isAtmWithdrawal = transaction.isAtmWithdrawal,
                             isInterAccountTransfer = transaction.isInterAccountTransfer,
                             onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
-                            onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) }
+                            onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) },
+                            onDelete = { id ->
+                                viewModel.deleteTransaction(id)
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Transaction deleted",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.restoreTransaction(id)
+                                    }
+                                }
+                            }
                         )
                     }
                 } else {
@@ -231,4 +248,9 @@ fun RegionalHomeScreen(
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter)
+    )
+    } // end outer Box
 }

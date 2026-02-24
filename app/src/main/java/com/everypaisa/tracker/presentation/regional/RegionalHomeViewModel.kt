@@ -167,6 +167,18 @@ class RegionalHomeViewModel @Inject constructor(
     fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
         viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
     }
+
+    fun deleteTransaction(id: Long) {
+        Log.d(TAG, "🗑️ deleteTransaction: id=$id")
+        viewModelScope.launch {
+            transactionRepository.deleteTransaction(id)
+            Log.d(TAG, "✅ deleteTransaction done: id=$id")
+        }
+    }
+
+    fun restoreTransaction(id: Long) {
+        viewModelScope.launch { transactionRepository.restoreTransaction(id) }
+    }
 }
 
 sealed class RegionalHomeUiState {

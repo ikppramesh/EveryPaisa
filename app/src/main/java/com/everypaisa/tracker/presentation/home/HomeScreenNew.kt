@@ -105,6 +105,7 @@ fun HomeScreenNew(
     
     Scaffold(
         contentWindowInsets = if (showTopBar) ScaffoldDefaults.contentWindowInsets else WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (showTopBar) LargeTopAppBar(
                 title = { 
@@ -142,7 +143,6 @@ fun HomeScreenNew(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (showTopBar) FloatingActionButton(
                 onClick = { startScan() },
