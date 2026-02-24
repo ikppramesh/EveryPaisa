@@ -119,6 +119,21 @@ interface TransactionDao {
     @Query("UPDATE transactions SET is_deleted = 1 WHERE sms_id IS NOT NULL")
     suspend fun markAllSmsTransactionsDeleted()
 
+    /**
+     * Undo the above operation for the given list of SMS IDs.  Used when the
+     * observed inbox contains these messages; since we sometimes mark everything as
+     * deleted first, this query restores the ones that still exist.
+     */
+    @Query("UPDATE transactions SET is_deleted = 0 WHERE sms_id IN (:smsIds)")
+    suspend fun restoreSmsTransactions(smsIds: List<Long>)
+
+    /**
+     * Return all SMS-based transaction ids currently stored (whether deleted or not).
+     * Helps with diagnostics and cleanup logic.
+     */
+    @Query("SELECT sms_id FROM transactions WHERE sms_id IS NOT NULL")
+    suspend fun getAllSmsIds(): List<Long>
+
     @Query("""
         SELECT * FROM transactions
         WHERE is_deleted = 0

@@ -30,4 +30,7 @@ interface TransactionRepository {
     // helpers used by SMS scanning logic
     suspend fun markSmsTransactionsDeletedExcept(smsIds: List<Long>)
     suspend fun markAllSmsTransactionsDeleted()
+
+    // utilities for diagnostics / testing
+    suspend fun getAllSmsIds(): List<Long>
 }
