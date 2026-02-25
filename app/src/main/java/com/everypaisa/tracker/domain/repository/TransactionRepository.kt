@@ -1,6 +1,7 @@
 package com.everypaisa.tracker.domain.repository
 
 import com.everypaisa.tracker.data.entity.TransactionEntity
+import com.everypaisa.tracker.data.entity.TransactionType
 import com.everypaisa.tracker.domain.model.CategorySpending
 import com.everypaisa.tracker.domain.model.MonthSummary
 import com.everypaisa.tracker.domain.model.Period
@@ -23,6 +24,7 @@ interface TransactionRepository {
     suspend fun restoreTransaction(id: Long)
     suspend fun markAsAtmWithdrawal(id: Long, flag: Boolean)
     suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean)
+    suspend fun markTransactionType(id: Long, type: TransactionType)
     suspend fun getTransactionsByAmountRange(minAmount: Double, maxAmount: Double, afterDate: Long): List<TransactionEntity>
     suspend fun countDuplicatesInWindow(amount: java.math.BigDecimal, bankName: String, startTime: Long, endTime: Long): Int
     suspend fun existsByHash(hash: String): Boolean

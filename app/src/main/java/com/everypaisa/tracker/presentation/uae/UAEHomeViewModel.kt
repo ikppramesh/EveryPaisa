@@ -109,6 +109,14 @@ class UAEHomeViewModel @Inject constructor(
     fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
         viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
     }
+
+    fun markTransactionAsCredited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.INCOME) }
+    }
+
+    fun markTransactionAsDebited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.EXPENSE) }
+    }
 }
 
 sealed class UAEHomeUiState {

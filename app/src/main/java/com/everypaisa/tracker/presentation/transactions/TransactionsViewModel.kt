@@ -3,6 +3,7 @@ package com.everypaisa.tracker.presentation.transactions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.everypaisa.tracker.data.entity.TransactionEntity
+import com.everypaisa.tracker.data.entity.TransactionType
 import com.everypaisa.tracker.domain.model.Country
 import com.everypaisa.tracker.domain.model.Period
 import com.everypaisa.tracker.domain.repository.TransactionRepository
@@ -90,6 +91,14 @@ class TransactionsViewModel @Inject constructor(
 
     fun markTransactionAsInterAccount(id: Long, flag: Boolean) {
         viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
+    }
+
+    fun markTransactionAsCredited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.INCOME) }
+    }
+
+    fun markTransactionAsDebited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.EXPENSE) }
     }
 }
 

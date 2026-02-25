@@ -282,28 +282,38 @@ internal object ParserUtils {
         return null
     }
     
-    /** Determines if money is going OUT (DEBIT) or coming IN (CREDIT). 
+    /** Determines if money is going OUT (DEBIT) or coming IN (CREDIT).
      *  "credit card" context = DEBIT (spending via credit card). */
     fun determineType(message: String): TransactionType {
         val lower = message.lowercase()
-        
+
         val debitSignals = listOf(
             "debited", "debit", "spent", "paid", "withdrawn", "purchase",
             "payment", "charged", "used at", "deducted", "sent", "txn of",
             "transaction of", "your txn"
         )
+        // Strong credit signals — always win over generic debit words (e.g. "payment" in sender name)
+        val strongCreditSignals = listOf(
+            "credited to your", "credited to acct", "credited to a/c",
+            "credited in your", "amount credited", "has been credited",
+            "salary credited", "cashback credited", "refund credited",
+            "interest credited", "reward credited", "credited by"
+        )
         val creditSignals = listOf(
             "credited to", "credited your", "credit to", "received",
             "deposited", "refund", "cashback", "salary credited", "reversed"
         )
-        
-        val isCreditCardContext = lower.contains("credit card") || 
+
+        val isCreditCardContext = lower.contains("credit card") ||
                                   lower.contains("cr card") ||
                                   lower.contains("cc ending")
         val hasDebit = debitSignals.any { lower.contains(it) }
+        val hasStrongCredit = strongCreditSignals.any { lower.contains(it) }
         val hasCredit = creditSignals.any { lower.contains(it) }
-        
+
         return when {
+            // Strong credit always wins unless it's credit card spend
+            hasStrongCredit && !isCreditCardContext -> TransactionType.CREDIT
             hasDebit && hasCredit -> TransactionType.DEBIT
             isCreditCardContext && !hasCredit -> TransactionType.DEBIT
             hasDebit -> TransactionType.DEBIT

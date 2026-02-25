@@ -110,6 +110,9 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET is_inter_account_transfer = :flag WHERE id = :id")
     suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean)
+
+    @Query("UPDATE transactions SET transaction_type = :type WHERE id = :id")
+    suspend fun updateTransactionType(id: Long, type: String)
     
     @Query("DELETE FROM transactions WHERE is_deleted = 1")
     suspend fun deleteSoftDeleted()

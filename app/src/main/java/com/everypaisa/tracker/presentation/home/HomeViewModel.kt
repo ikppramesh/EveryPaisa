@@ -225,6 +225,14 @@ class HomeViewModel @Inject constructor(
             transactionRepository.markAsInterAccountTransfer(id, flag)
         }
     }
+
+    fun markTransactionAsCredited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.INCOME) }
+    }
+
+    fun markTransactionAsDebited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.EXPENSE) }
+    }
 }
 
 sealed interface HomeUiState {

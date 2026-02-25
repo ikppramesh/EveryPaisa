@@ -2,6 +2,7 @@ package com.everypaisa.tracker.data.repository
 
 import com.everypaisa.tracker.data.dao.TransactionDao
 import com.everypaisa.tracker.data.entity.TransactionEntity
+import com.everypaisa.tracker.data.entity.TransactionType
 import com.everypaisa.tracker.domain.model.CategorySpending
 import com.everypaisa.tracker.domain.model.MonthSummary
 import com.everypaisa.tracker.domain.model.Period
@@ -121,6 +122,10 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun markAsInterAccountTransfer(id: Long, flag: Boolean) {
         transactionDao.markAsInterAccountTransfer(id, flag)
+    }
+
+    override suspend fun markTransactionType(id: Long, type: TransactionType) {
+        transactionDao.updateTransactionType(id, type.name)
     }
 
     override fun getDistinctCurrencies(): kotlinx.coroutines.flow.Flow<List<String>> {

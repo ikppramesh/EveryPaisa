@@ -168,6 +168,14 @@ class RegionalHomeViewModel @Inject constructor(
         viewModelScope.launch { transactionRepository.markAsInterAccountTransfer(id, flag) }
     }
 
+    fun markTransactionAsCredited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.INCOME) }
+    }
+
+    fun markTransactionAsDebited(id: Long) {
+        viewModelScope.launch { transactionRepository.markTransactionType(id, TransactionType.EXPENSE) }
+    }
+
     fun deleteTransaction(id: Long) {
         Log.d(TAG, "🗑️ deleteTransaction: id=$id")
         viewModelScope.launch {

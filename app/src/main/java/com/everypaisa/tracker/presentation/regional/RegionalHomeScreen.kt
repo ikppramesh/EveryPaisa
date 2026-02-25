@@ -174,6 +174,8 @@ fun RegionalHomeScreen(
                             isInterAccountTransfer = transaction.isInterAccountTransfer,
                             onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
                             onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) },
+                            onMarkAsCredited = { id -> viewModel.markTransactionAsCredited(id) },
+                            onMarkAsDebited = { id -> viewModel.markTransactionAsDebited(id) },
                             onDelete = { id ->
                                 viewModel.deleteTransaction(id)
                                 scope.launch {

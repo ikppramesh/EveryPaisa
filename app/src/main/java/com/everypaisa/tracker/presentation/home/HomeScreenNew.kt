@@ -403,6 +403,8 @@ fun HomeScreenNew(
                                         isInterAccountTransfer = transaction.isInterAccountTransfer,
                                         onMarkAsAtm = { id, flag -> viewModel.markTransactionAsAtm(id, flag) },
                                         onMarkAsInterAccount = { id, flag -> viewModel.markTransactionAsInterAccount(id, flag) },
+                                        onMarkAsCredited = { id -> viewModel.markTransactionAsCredited(id) },
+                                        onMarkAsDebited = { id -> viewModel.markTransactionAsDebited(id) },
                                         onDelete = { id ->
                                             viewModel.deleteTransaction(id)
                                             scope.launch {
@@ -1040,6 +1042,8 @@ fun EnhancedTransactionCard(
     isInterAccountTransfer: Boolean = false,
     onMarkAsAtm: (Long, Boolean) -> Unit = { _, _ -> },
     onMarkAsInterAccount: (Long, Boolean) -> Unit = { _, _ -> },
+    onMarkAsCredited: (Long) -> Unit = { _ -> },
+    onMarkAsDebited: (Long) -> Unit = { _ -> },
     onDelete: (Long) -> Unit = { _ -> }
 ) {
     val context = LocalContext.current
@@ -1104,6 +1108,36 @@ fun EnhancedTransactionCard(
                     onMarkAsInterAccount(transactionId, !isInterAccountTransfer)
                     showMarkMenu = false
                 }
+            )
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.ArrowUpward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = Color(0xFF2E7D32)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Mark as Credited", color = Color(0xFF2E7D32))
+                    }
+                },
+                onClick = { onMarkAsCredited(transactionId); showMarkMenu = false }
+            )
+            DropdownMenuItem(
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.ArrowDownward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Mark as Debited", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                onClick = { onMarkAsDebited(transactionId); showMarkMenu = false }
             )
             DropdownMenuItem(
                 text = {
@@ -1303,7 +1337,7 @@ fun EnhancedTransactionCard(
                     }
                     
                     Text(
-                        "${if (isExpense) "-" else if (isTransfer) "" else "+"}$currencySymbol${String.format("%,.2f", amount.toDouble())}",
+                        "${if (isExpense) "-" else if (isTransfer) "" else "+"}$currencySymbol${String.format("%,.2f", amount.abs().toDouble())}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = when {
